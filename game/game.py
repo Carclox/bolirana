@@ -75,8 +75,9 @@ class ResourceManager:
             self.fonts['small'] = pygame.font.Font(os.path.join('assets', 'fonts', 'electromagnetic.otf'), 36) # arcade.ttf para texto pequeño
         except Exception as e:
             print(f"Error cargando fuentes: {e}")
-            # Puedes considerar cargar una fuente por defecto si falla
-            # self.fonts['large'] = pygame.font.Font(None, 74)
+            self.fonts['large'] = pygame.font.Font(None, 74)
+            self.fonts['medium'] = pygame.font.Font(None, 50)
+            self.fonts['small'] = pygame.font.Font(None, 36)
 
     def _load_sounds(self):
         try:
@@ -475,7 +476,7 @@ class PauseState(GameState):
 
         #DrawingUtils.draw_text(screen, "PAUSA", self.game.resources.fonts['large'], Config.YELLOW, Config.SCREEN_WIDTH // 2, Config.SCREEN_HEIGHT // 4)
 
-        y_start = Config.SCREEN_HEIGHT // 2 - 30
+        y_start = Config.SCREEN_HEIGHT // 2 + 80
         for i, option in enumerate(self.options):
             color = Config.GREEN if self.selection_index == i else Config.WHITE
             DrawingUtils.draw_text(screen, option, self.game.resources.fonts['medium'], color, Config.SCREEN_WIDTH // 2, y_start + i * 60)
@@ -651,40 +652,38 @@ class Game:
                     running = False
 
                 if event.type == pygame.KEYDOWN:
+                    key_name = None
                     if event.key in Config.KEY_MAPPING:
                         key_name = Config.KEY_MAPPING[event.key]
 
-                        # Lógica para el sonido de pulsación de tecla
-                        # Se reproduce si el sistema está despierto y no es una tecla de control de sistema
-                        # Y el sonido existe en los recursos.
-                        if self.is_system_awake and key_name not in ["SLEEP", "WAKEUP"] and self.resources.get_sound('button'):
+                    # 1. Manejo de la tecla 'S' para el temporizador de salida/sleep
+                    if event.key == pygame.K_s:
+                        if self.s_key_pressed_time == 0: # Si no estaba presionada, registrar el inicio
+                            self.s_key_pressed_time = pygame.time.get_ticks()
+
+                    # 2. Manejo de WAKEUP (si el sistema está dormido, cualquier tecla lo despierta)
+                    # Excluimos la tecla 'S' aquí para evitar conflictos con su lógica de larga pulsación/sleep.
+                    elif not self.is_system_awake and key_name: # Si estamos dormidos y se presiona CUALQUIER tecla (excepto 'S')
+                        self.handle_system_power("WAKEUP")
+                        # No procesamos más entradas en este frame, ya que el estado ha cambiado.
+                        continue # Salta al siguiente evento para evitar doble procesamiento
+
+
+                    # 3. Procesar entradas normales (si el sistema está despierto)
+                    if self.is_system_awake and key_name and key_name not in ["SLEEP", "WAKEUP"]: # "SLEEP" y "WAKEUP" se manejan fuera del state handler
+                        if self.resources.get_sound('button'):
                             self.resources.get_sound('button').play()
+                        self.current_state_handler.handle_input(key_name)
 
-                        # Manejo de la tecla 's' para suspensión y salida
-                        if event.key == pygame.K_s:
-                            if self.s_key_pressed_time == 0: # Si no estaba presionada, registrar el inicio
-                                self.s_key_pressed_time = pygame.time.get_ticks()
-
-                            # Si el sistema está despierto, intentar dormir; si está dormido, intentar despertar
-                            if self.is_system_awake:
-                                # Aquí ya se ha detectado el KEYDOWN de 's', así que la transición a SLEEP
-                                # la gestiona handle_system_power.
-                                # No es necesario llamar a handle_system_power("SLEEP") directamente aquí,
-                                # ya que la lógica de la pulsación prolongada tiene prioridad.
-                                pass # La acción de SLEEP ya se maneja al soltar la tecla o por pulsación prolongada
-                            else: # Si no está despierto, se asume que 's' es para despertar
-                                self.handle_system_power("WAKEUP")
-                        # Para otras teclas, si el sistema está despierto, se delega al estado actual
-                        elif self.is_system_awake:
-                            self.current_state_handler.handle_input(key_name)
 
                 elif event.type == pygame.KEYUP:
                     if event.key == pygame.K_s:
-                        # Si la tecla 's' se suelta y NO ha pasado el tiempo de long press (ya que si lo hizo, 'running' sería False)
-                        # esto significa que fue una pulsación corta, y si estábamos despiertos, era para dormir.
-                        if self.s_key_pressed_time != 0 and self.is_system_awake and (pygame.time.get_ticks() - self.s_key_pressed_time < 3000):
+                        # Si la tecla 'S' se suelta y fue una pulsación corta, y el sistema estaba despierto,
+                        # significa que el usuario quería ir al modo sleep.
+                        if self.s_key_pressed_time != 0 and self.is_system_awake and \
+                           (pygame.time.get_ticks() - self.s_key_pressed_time < 3000):
                             self.handle_system_power("SLEEP")
-                        self.s_key_pressed_time = 0 # Siempre resetear el tiempo al soltar la tecla
+                        self.s_key_pressed_time = 0 # Siempre reiniciar el tiempo al soltar la tecla
 
             # Lógica para detectar pulsación prolongada de la tecla 's' (para salir del programa)
             if self.s_key_pressed_time != 0 and pygame.time.get_ticks() - self.s_key_pressed_time > 3000:
