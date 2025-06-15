@@ -1,10 +1,15 @@
 # Bolirrana Arcade Game
 
-A simple arcade-style game developed with Pygame, designed to simulate a "Bolirrana" (Frog Game) experience with customizable player counts, score targets, and a state-based system for different game screens.
+Juego Bolirana simple estilo arcade implemantado en pygame, diseñado para simular experiencia del juego tradicional colombiano
+'rana' o 'bolirana' a traves de entradas de teclado estandar.
 
-## Table of Contents
+Simple arcade style Bolirana game implemented in pygame, designed to simulate traditional Colombian game experience
+'rana' or 'bolirana' through standard keyboard inputs.
 
--   [Description](#description)
+
+## Contenido
+
+-   [Descripcion](#descripcion)
 -   [Features](#features)
 -   [How to Play](#how-to-play)
 -   [Installation](#installation)
@@ -14,7 +19,10 @@ A simple arcade-style game developed with Pygame, designed to simulate a "Bolirr
 -   [Acknowledgements](#acknowledgements)
 -   [To-Do / Improvements](#to-do--improvements)
 
-## Description
+## Descripcion
+
+Este proyecto es una simulación basada en Pygame de una Bolirrana (Juego de la Rana), un juego arcade en el que los jugadores intentan conseguir puntos lanzando una esfera metalica hacia los objetivos. El juego cuenta con un diseño modular, separando las preocupaciones en la configuración, gestión de recursos, utilidades de dibujo, y los distintos estados del juego. Incluye la selección del jugador, la personalización del objetivo de puntuación, la jugabilidad, la funcionalidad de pausa y una pantalla de finalización de la partida. También se ha implementado un «modo de reposo» para reducir el consumo de energía.
+
 
 This project is a Pygame-based simulation of a Bolirrana (Frog Game), an arcade game where players aim to score points by hitting targets. The game features a modular design, separating concerns into configuration, resource management, drawing utilities, and distinct game states. It includes player selection, score target customization, gameplay, pause functionality, and a game over screen. A "sleep mode" is also implemented for low-power consumption.
 
@@ -165,6 +173,14 @@ The `Config.KEY_MAPPING` dictionary defines the standard keyboard keys used to s
     }
 
 ```
-## Requerimientos
+## Funcionalidades
 
+* Si la tecla 's' es presionada y el sistema esta abierto, se entra en modo de bajo consumo y la pantalla se pinta de negro.
+* Para salir del modo de bajo consumo basta con presionar cualquier tecla excepto la tecla s (para evitar conflictos con logica de salida).
+* Para cerrar el juego y salir a la terminal se presiona la tecla s durante 3 segundos. 
 
+## Mejoras futuras
+Durante el gameplay, si un jugador completa el objetivo de puntos, el programa omite seleccionar su turno,  y pasa inmediatamente
+al siguinete turno de jugador que no haya completado el objetivo.
+
+Implementar interfaz de teclado virtual que permita personalizar nombres de jugadores y puntos objetivo dentro de un limite especifico, por ejemplo: (0-20000) (solo en estado 0, menu principal)

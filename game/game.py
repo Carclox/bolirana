@@ -1,7 +1,6 @@
 import pygame
 import sys
 import os
-import time
 
 # --- Módulo de Constantes y Configuraciones ---
 # Centralizamos las constantes para fácil acceso y modificación.
@@ -453,7 +452,6 @@ class PauseState(GameState):
         self.animation_finished = True # Siempre es true para una sola imagen
 
         # La música de fondo del juego debería estar pausada desde GameplayState.handle_input
-        # if self.game.resources.sounds['background']: pygame.mixer.music.pause() # <--- Movido a GameplayState
 
     def handle_input(self, key_name):
         if key_name == "UP":
@@ -472,11 +470,10 @@ class PauseState(GameState):
                 print("Juego: Saliendo de la partida.")
 
     def draw(self, screen):
-        super().draw(screen) # Dibuja el fondo (la única imagen de pausa)
+        super().draw(screen)
 
-        #DrawingUtils.draw_text(screen, "PAUSA", self.game.resources.fonts['large'], Config.YELLOW, Config.SCREEN_WIDTH // 2, Config.SCREEN_HEIGHT // 4)
 
-        y_start = Config.SCREEN_HEIGHT // 2 + 80
+        y_start = Config.SCREEN_HEIGHT // 2 + 80 # ajustar la posicion de  lo que se dibuje
         for i, option in enumerate(self.options):
             color = Config.GREEN if self.selection_index == i else Config.WHITE
             DrawingUtils.draw_text(screen, option, self.game.resources.fonts['medium'], color, Config.SCREEN_WIDTH // 2, y_start + i * 60)
