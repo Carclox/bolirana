@@ -1,193 +1,201 @@
-#include "GPIO_driver.h"
+/*
+Dispositivo : Driver GPIO Teclado estandar
+Autor :  Carlos Daniel Silva
+Fecha :  2023-10-05
+Descripcion :  Controlador para la lectura de un teclado matricial utilizando GPIO
+*/
+
+#include <linux/module.h>
+#include <linux/init.h>
+#include <linux/kernel.h>
+#include <linux/gpio.h>
+#include <linux/interrupt.h>
+#include <linux/input.h>
+#include <linux/jiffies.h>
+#include <linux/delay.h>
 
 
 
-// --- Variables Globales ---
-int fifo_fd; // File descriptor de la tubería
-volatile int running = 1; // Bandera para controlar el bucle principal
-volatile uint32_t power_button_pressed_tick = 0; // Tiempo (tick de pigpio) en que se presionó el botón de encendido
-volatile int system_awake = 1; // 1 for awake, 0 for sleep. Controla el estado del sistema para el botón ON/OFF.
 
-// --- Funciones para manejo de GPIO ---
 
-// Callback para pines de puntuación (pulso HIGH)
-// Los eventos de puntuación son impulsos cortos que queremos detectar de inmediato.
-void score_gpio_callback(int gpio, int level, uint32_t tick) {
-    // Solo nos interesa el flanco de subida (HIGH)
-    if (level == PI_HIGH) {
-        char event_msg[32];
-        switch (gpio) {
-            case GPIO_SCORE_500: snprintf(event_msg, sizeof(event_msg), "SCORE_500\n"); break;
-            case GPIO_SCORE_300: snprintf(event_msg, sizeof(event_msg), "SCORE_300\n"); break;
-            case GPIO_SCORE_250: snprintf(event_msg, sizeof(event_msg), "SCORE_250\n"); break;
-            case GPIO_SCORE_100: snprintf(event_msg, sizeof(event_msg), "SCORE_100\n"); break;
-            default: return; // No es un pin de puntuación conocido
-        }
-        // Se puede añadir un manejo de error para write si es necesario (EAGAIN, EPIPE)
-        write(fifo_fd, event_msg, strlen(event_msg));
-        printf("Evento puntuación: %s", event_msg);
+
+//=====================================================
+//Definicion de tiempo de antirebote
+//=====================================================
+
+#define DEBOUNCE_DELAY_US 50000 // 50 ms en microsegundos
+
+//=====================================================
+// Estructura para almacenar la informacion de cada tecla
+//=====================================================
+
+struct gpio_button {
+    int gpio; //BCM gpio number
+    int irq; //interrupcion asociada al gpio
+    unsigned int keycode; //codigo evdev asociado al boton
+    char name[32]; // nombre del boton
+};
+
+//=====================================================
+// Arreglo de las teclas
+//=====================================================
+
+static struct gpio_button gpio_buttons[] ={
+    { .gpio = 18, .keycode = KEY_UP, .name = "UP"},
+    { .gpio = 23, .keycode = KEY_DOWN, .name = "DOWN"},
+    { .gpio = 24, .keycode = KEY_TAB, .name = "TAB"},
+    { .gpio = 25, .keycode = KEY_ENTER, .name = "ENTER"},
+    { .gpio = 8, .keycode = KEY_S, .name = "S"},
+    { .gpio = 7, .keycode = KEY_1, .name = "NUM_1"},
+    { .gpio = 1. .keycode = KEY_2, .name = "NUM_2"},
+    { .gpio = 12, .keycode = KEY_3, .name = "NUM_3"},
+    { .gpio = 16, .keycode = KEY_4, .name = "NUM_4"},
+    { .gpio = 20, .keycode = KEY_5, .name = "NUM_5"},
+    { .gpio = 21, .keycode = KEY_6, .name = "NUM_6"},
+    { .gpio = 26, .keycode = KEY_7, .name = "NUM_7"},
+    { .gpio = 19, .keycode = KEY_8, .name = "NUM_8"},
+};
+
+
+#define NUM_BUTTONS ARRAY_SIZE(gpio_buttons)
+//=====================================================
+// Puntero global al dispositivo de entrada
+//=====================================================
+
+static struct input_dev *custom_input_dev;
+//=====================================================
+// manejador de interrupciones ISR
+//=====================================================
+static irqreturn_t gpio_isr(int irq, void *data){
+    /*
+     * Manejo de la interrupcion
+     */
+    struct gpio_button *button = (struct gpio_button *)data;
+    int value; // estado actual del pin GPIO
+    value = gpio_get_value(button->gpio); // leer el estado del GPIO
+    // enviar evento de tecla al sistma de entrada
+    // value sera 1 si se presiona (gpio HIGH) y 0 si se libera (gpio LOW)
+    input_report_key(custom_input_dev, button->keycode, value);
+    input_sync(custom_input_dev); // sincroniza el evento
+    pr_info("%s: Button %s %s (GPIO %d, IRQ %d, keycode %d)\n",
+        KBUILD_MODNAME, button->name ? "pressed" : "released",
+        button->gpio, button->irq, button->keycode);
+
+    return IRQ_HANDLED; // indica que la interrupcion fue manejada
+}
+
+
+//=====================================================
+// Inicializacion y salida del modulo
+//=====================================================
+
+static int __init custom_gpio_driver_init(void){
+    int ret;
+    int i;
+
+    pr_info("%s: Inicializando custom GPIO driver\n", KBUILD_MODNAME);
+
+    // crear el dispositivo de entrada
+    custom_input_dev = input_allocate_device();
+    if (!custom_input_dev){
+        pr_err("%s: no se pudo asignar el dispositivo de entrada\n");
+        return -ENOMEM;
     }
-}
+    custom_input_dev->name = "custom_gpio_keyboard";
+    custom_input_dev->id.bustype = BUS_VIRTUAL;
+    custom_input_dev->id.vendor = 0xAAAA;
+    custom_input_dev->id.product = 0xBBBB;
+    custom_input_dev->id.version = 0x0001;
 
-// Callback para pulsadores de control (con debounce software)
-void button_gpio_callback(int gpio, int level, uint32_t tick) {
-    if (gpio == GPIO_BTN_ON_OFF) {
-        if (level == PI_HIGH) { // Botón ON/OFF presionado
-            power_button_pressed_tick = tick;
-            printf("Botón ON/OFF PRESIONADO (tick: %u)\n", tick);
-            // No enviar evento de "PRESSED" aquí directamente para el juego,
-            // ya que la acción depende de la duración.
-        } else { // Botón ON/OFF soltado
-            if (power_button_pressed_tick != 0) { // Si estaba presionado
-                uint32_t hold_duration_us = tick - power_button_pressed_tick;
-                printf("Botón ON/OFF SOLTADO (duración: %u us)\n", hold_duration_us);
+    //indicar que el dispositivo soporta eventos de teclas
+    __set_bit(EV_KEY, custom_input_dev->evbit);
 
-                if (hold_duration_us >= (POWER_OFF_HOLD_TIME_MS * 1000)) {
-                    printf("¡Apagando el sistema (pulso largo)!\n");
-                    char event_msg[] = "SYSTEM_SHUTDOWN\n";
-                    write(fifo_fd, event_msg, strlen(event_msg));
-                    // Darle tiempo al Python para recibir y actuar (0.5s)
-                    // Considera si este delay es suficiente o si el shutdown debe ser manejado por el servicio de Python.
-                    // Ejecutar system() bloquea el driver hasta que el comando termina.
-                    usleep(500000);
-                    system("sudo shutdown -h now");
-                    running = 0; // Detener el bucle principal ya que el sistema se apagará.
-                } else { // Pulso corto
-                    if (system_awake) {
-                        printf("Botón ON/OFF: Pulso corto, entrando en modo de bajo consumo.\n");
-                        char event_msg[] = "SYSTEM_SLEEP\n";
-                        write(fifo_fd, event_msg, strlen(event_msg));
-                        system_awake = 0; // Actualizar estado del driver
-                    } else {
-                        printf("Botón ON/OFF: Pulso corto, saliendo de modo de bajo consumo.\n");
-                        char event_msg[] = "SYSTEM_WAKEUP\n";
-                        write(fifo_fd, event_msg, strlen(event_msg));
-                        system_awake = 1; // Actualizar estado del driver
-                    }
-                }
-                power_button_pressed_tick = 0; // Reset
-            }
-        }
-        return;
+    //indicar los keycodes que soporta
+    for (i=0;i < NUM_BUTTONS; i++){
+        __set_bit(gpio_buttons[i].keycode, custom_input_dev->keybit);
+    }
+    ret = input_register_device(custom_input_dev);
+    if (ret){
+        pr_err("%s: no se pudo registrar el dispositivo de entrada\n", KBUILD_MODNAME);
+        input_free_device(custom_input_dev);
+        return ret;
     }
 
-    // Para los otros botones de control
-    if (level == PI_HIGH) { // Botón presionado (flanco de subida)
-        char event_msg[32];
-        switch (gpio) {
-            case GPIO_BTN_UP:    snprintf(event_msg, sizeof(event_msg), "KEY_UP_PRESSED\n"); break;
-            case GPIO_BTN_DOWN:  snprintf(event_msg, sizeof(event_msg), "KEY_DOWN_PRESSED\n"); break;
-            case GPIO_BTN_LEFT:  snprintf(event_msg, sizeof(event_msg), "KEY_LEFT_PRESSED\n"); break;
-            case GPIO_BTN_RIGHT: snprintf(event_msg, sizeof(event_msg), "KEY_RIGHT_PRESSED\n"); break;
-            case GPIO_BTN_INTRO: snprintf(event_msg, sizeof(event_msg), "KEY_INTRO_PRESSED\n"); break;
-            default: return;
+    // configurar los GPIOs y las interrupciones
+    for (i=0; i < NUM_BUTTONS; i++){
+        struct gpio_button *button = &gpio_buttons[i];
+        // configurar el GPIO como entrada
+        ret = gpio_request(button->gpio, GPIO_IN, button->name);
+        if (ret) {
+            pr_err("%s: no se pudo solicitar el GPIO %d\n", KBUILD_MODNAME, button->gpio);
+            goto err_gpio_request;
         }
-        write(fifo_fd, event_msg, strlen(event_msg));
-        printf("Evento pulsador: %s", event_msg);
-    } else { // Botón soltado (flanco de bajada)
-        char event_msg[32];
-        switch (gpio) {
-            case GPIO_BTN_UP:    snprintf(event_msg, sizeof(event_msg), "KEY_UP_RELEASED\n"); break;
-            case GPIO_BTN_DOWN:  snprintf(event_msg, sizeof(event_msg), "KEY_DOWN_RELEASED\n"); break;
-            case GPIO_BTN_LEFT:  snprintf(event_msg, sizeof(event_msg), "KEY_LEFT_RELEASED\n"); break;
-            case GPIO_BTN_RIGHT: snprintf(event_msg, sizeof(event_msg), "KEY_RIGHT_RELEASED\n"); break;
-            case GPIO_BTN_INTRO: snprintf(event_msg, sizeof(event_msg), "KEY_INTRO_RELEASED\n"); break;
-            default: return;
+        //obtener el numero irq asociado al GPIO
+        button->irq = gpio_to_irq(button->gpio);
+        if (button->irq < 0) {
+            pr_err("%s: no se pudo obtener el IRQ para GPIO %d\n", KBUILD_MODNAME, button->gpio);
+            ret = button->irq;
+            goto err_gpio_to_irq;
         }
-        write(fifo_fd, event_msg, strlen(event_msg));
-        // printf("Evento pulsador: %s", event_msg); // Puedes comentar esto si no necesitas el evento de soltado
+        //solicitar interrupcion en modo ascendente  y descendente
+        ret = request_irq(button->irq, gpio_isr,
+            IRQF_TRIGGER_RISING |IRQF_TRIGGER_FALLING |IRQF_SHARED,
+            button->name, button);
+        if (ret) {
+            pr_err("%s: no se pudo solicitar el IRQ %d\n", KBUILD_MODNAME, button->irq);
+            goto err_request_irq;
+        }
     }
-}
+    pr_info("%s: custom gpio driver loaded successfully\n", KBUILD_MODNAME);
+    return 0; // exito
 
-// --- Manejo de Señales (para salir limpiamente) ---
-void sigint_handler(int signo) {
-    if (signo == SIGINT || signo == SIGTERM) {
-        printf("\nSeñal recibida, cerrando el driver...\n");
-        running = 0; // Detiene el bucle principal
+    err_request_irq:
+        if (button->irq >=0){
+            free_irq(button->irq, button);
+        }
+
+    err_gpio_irq:
+        gpio_free(button->gpio);
+    
+    err_gpio_request:
+    //liberar los gpio e irqs ya configurados
+    for(i--; i>=0;i--){
+        free_irq(gpio_buttons[i].irq, &gpio_buttons[i]);
+        gpio_free(gpio_buttons[i].gpio);
     }
-}
-
-// --- Función de inicialización y limpieza ---
-void setup_gpios() {
-    // Puntuación
-    gpioSetMode(GPIO_SCORE_500, PI_INPUT);
-    gpioSetPullResistor(GPIO_SCORE_500, PI_PUD_DOWN); // Asegura estado LOW
-    // No usamos gpioSetAlertFuncEx aquí para score porque queremos cada pulso sin debounce
-    gpioSetAlertFunc(GPIO_SCORE_500, score_gpio_callback);
-
-    gpioSetMode(GPIO_SCORE_300, PI_INPUT);
-    gpioSetPullResistor(GPIO_SCORE_300, PI_PUD_DOWN);
-    gpioSetAlertFunc(GPIO_SCORE_300, score_gpio_callback);
-
-    gpioSetMode(GPIO_SCORE_250, PI_INPUT);
-    gpioSetPullResistor(GPIO_SCORE_250, PI_PUD_DOWN);
-    gpioSetAlertFunc(GPIO_SCORE_250, score_gpio_callback);
-
-    gpioSetMode(GPIO_SCORE_100, PI_INPUT);
-    gpioSetPullResistor(GPIO_SCORE_100, PI_PUD_DOWN);
-    gpioSetAlertFunc(GPIO_SCORE_100, score_gpio_callback);
-
-    // Pulsadores (con debounce)
-    gpioSetMode(GPIO_BTN_UP, PI_INPUT);
-    gpioSetPullResistor(GPIO_BTN_UP, PI_PUD_DOWN);
-    // gpioSetAlertFuncEx permite pasar un puntero de usuario, pero para estos callbacks simples, gpioSetAlertFunc es suficiente si no necesitas el puntero de usuario.
-    // gpioSetAlertFunc solo pasa gpio, level, tick. Si quieres el mismo callback para todos y usar el gpio ID, es mejor.
-    // gpioSetAlertFuncEx se usa para pasar el puntero a la función, que en tu código original ya es el GPIO ID
-    // Simplificando a gpioSetAlertFunc ya que el GPIO ID es pasado directamente.
-    gpioSetAlertFunc(GPIO_BTN_UP, button_gpio_callback);
-    gpioSetDebounce(GPIO_BTN_UP, DEBOUNCE_TIME_MS * 1000); // Debounce en microsegundos
-
-    gpioSetMode(GPIO_BTN_DOWN, PI_INPUT);
-    gpioSetPullResistor(GPIO_BTN_DOWN, PI_PUD_DOWN);
-    gpioSetAlertFunc(GPIO_BTN_DOWN, button_gpio_callback);
-    gpioSetDebounce(GPIO_BTN_DOWN, DEBOUNCE_TIME_MS * 1000);
-
-    gpioSetMode(GPIO_BTN_LEFT, PI_INPUT);
-    gpioSetPullResistor(GPIO_BTN_LEFT, PI_PUD_DOWN);
-    gpioSetAlertFunc(GPIO_BTN_LEFT, button_gpio_callback);
-    gpioSetDebounce(GPIO_BTN_LEFT, DEBOUNCE_TIME_MS * 1000);
-
-    gpioSetMode(GPIO_BTN_RIGHT, PI_INPUT);
-    gpioSetPullResistor(GPIO_BTN_RIGHT, PI_PUD_DOWN);
-    gpioSetAlertFunc(GPIO_BTN_RIGHT, button_gpio_callback);
-    gpioSetDebounce(GPIO_BTN_RIGHT, DEBOUNCE_TIME_MS * 1000);
-
-    gpioSetMode(GPIO_BTN_INTRO, PI_INPUT);
-    gpioSetPullResistor(GPIO_BTN_INTRO, PI_PUD_DOWN);
-    gpioSetAlertFunc(GPIO_BTN_INTRO, button_gpio_callback);
-    gpioSetDebounce(GPIO_BTN_INTRO, DEBOUNCE_TIME_MS * 1000);
-
-    // Botón ON/OFF
-    gpioSetMode(GPIO_BTN_ON_OFF, PI_INPUT);
-    gpioSetPullResistor(GPIO_BTN_ON_OFF, PI_PUD_DOWN);
-    gpioSetAlertFunc(GPIO_BTN_ON_OFF, button_gpio_callback);
-    // No usamos debounce de pigpio aquí para el ON/OFF, ya que queremos el tiempo de pulsación exacto.
-    // El debounce físico es importante, el software de pigpio no lo usaremos para la duración.
-
-    printf("GPIOs configurados y callbacks registrados.\n");
-}
-
-void cleanup_gpios() {
-    printf("Desactivando callbacks y cerrando pigpio...\n");
-    // Desactivar callbacks
-    gpioSetAlertFunc(GPIO_SCORE_500, NULL);
-    gpioSetAlertFunc(GPIO_SCORE_300, NULL);
-    gpioSetAlertFunc(GPIO_SCORE_250, NULL);
-    gpioSetAlertFunc(GPIO_SCORE_100, NULL);
-    gpioSetAlertFunc(GPIO_BTN_UP, NULL);
-    gpioSetAlertFunc(GPIO_BTN_DOWN, NULL);
-    gpioSetAlertFunc(GPIO_BTN_LEFT, NULL);
-    gpioSetAlertFunc(GPIO_BTN_RIGHT, NULL);
-    gpioSetAlertFunc(GPIO_BTN_INTRO, NULL);
-    gpioSetAlertFunc(GPIO_BTN_ON_OFF, NULL);
-
-    gpioTerminate(); // Desconecta de pigpiod
-    printf("pigpio terminado.\n");
+    input_unregister_device(custom_input_dev);
+    input_free_device(custom_input_dev);
+    return ret;
 }
 
 
-//libinput
 
+static void __exit custom_gpio_driver_exit(void){
+    int i;
+    pr_info("%s: Desactivando custom GPIO driver\n", KBUILD_MODNAME);
+    // liberar los GPIOs e interrupciones
+    for (i = 0; i < NUM_BUTTONS; i++) {
+        free_irq(gpio_buttons[i].irq, &gpio_buttons[i]);
+        gpio_free(gpio_buttons[i].gpio);
+    }
 
+    //desregistrar el dispositivo de entrada
+    input_unregister_device(custom_input_dev);
+    input_free_device(custom_input_dev);
+    pr_info("%s: custom GPIO driver descargado correctamente\n", KBUILD_MODNAME);
+}
 
+//=====================================================
+// macros para registarr inicializacion y salida del modulo 
+//=====================================================
+module_init(custom_gpio_driver_init);
+module_exit(custom_gpio_driver_exit);
 
+//=====================================================
+// Metadatos del modulo
+//=====================================================
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Carlos Daniel Silva");
+MODULE_DESCRIPTION("GPIO  Keyboard Driver");
+MODULE_ALIAS("platform:rpi-Keyboard-ctrl");
+MODULE_VERSION("0.01");

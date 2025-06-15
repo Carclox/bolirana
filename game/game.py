@@ -12,14 +12,14 @@ class Config:
     # Colores
     WHITE = (255, 255, 255)
     BLACK = (0, 0, 0)
-    RED = (255, 0, 0)
+    #RED = (255, 0, 0)
     GREEN = (0, 255, 0)
     BLUE = (0, 0, 255)
     YELLOW = (255, 255, 0)
     GRAY = (150, 150, 150)
 
     # Opciones de juego
-    PUNTAJE_OBJETIVO_OPTIONS = [1000, 2000, 3000, 4000, 5000]
+    PUNTAJE_OBJETIVO_OPTIONS = [1000, 2000, 3000, 4000, 5000,8000]
     NUM_JUGADORES_OPTIONS = [2, 3, 4, 5, 6]
 
     # Mapeo de puntajes para los sensores 1-8
