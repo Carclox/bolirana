@@ -523,7 +523,7 @@ class GameOverState(GameState):
         if len(self.game.winners) > 0:
             #DrawingUtils.draw_text(screen, "¡FIN DEL JUEGO!", self.game.resources.fonts['large'], Config.GREEN, Config.SCREEN_WIDTH // 2, Config.SCREEN_HEIGHT // 4)
 
-            y_offset = Config.SCREEN_HEIGHT // 2 - 80
+            y_offset = Config.SCREEN_HEIGHT // 2 + 60
             DrawingUtils.draw_text(screen, "GANADORES ", self.game.resources.fonts['large'], Config.GREEN, Config.SCREEN_WIDTH // 2, y_offset)
             y_offset += 50
 

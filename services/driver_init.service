@@ -1,0 +1,11 @@
+[Unit]
+Description=Servicio para inicializar el driver driver_gpio_teclado
+After=multiuser.target
+
+[Service]
+Type=oneshot
+ExecStart=/sbin/insmod /usr/local/bin/driver_gpio_teclado.ko
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multiuser.target

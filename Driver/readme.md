@@ -34,4 +34,9 @@ sudo evtest
 ```
 esto mostrara eventos de presion y liberacion de teclado estandar cuando presiones un  boton.
 
+***Buscar el dispositivo***
+```bash
+cat /proc/bus/input/devices | grep -A5 "custom_gpio_keyboard"
+```
+
 # Descripcion del Modulo

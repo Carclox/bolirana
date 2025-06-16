@@ -1,0 +1,16 @@
+[Unit]
+Description=Servicio para monitorear el teclado GPIO personalizado
+Requires=driver_init.service
+After=driver_init.service
+After=multiuser.target
+
+[Service]
+ExecStart=/usr/local/bin/keyboard_monitor
+Restart=on-failure
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+User=root  ; Se ejecuta como root para acceder a /dev/input/
+
+[Install]
+WantedBy=multiuser.target
