@@ -3,7 +3,6 @@ import sys
 import os
 
 # --- Módulo de Constantes y Configuraciones ---
-# Centralizamos las constantes para fácil acceso y modificación.
 class Config:
     SCREEN_WIDTH = 1280
     SCREEN_HEIGHT = 720
@@ -12,7 +11,6 @@ class Config:
     # Colores
     WHITE = (255, 255, 255)
     BLACK = (0, 0, 0)
-    #RED = (255, 0, 0)
     GREEN = (0, 255, 0)
     BLUE = (0, 0, 255)
     YELLOW = (255, 255, 0)
@@ -28,16 +26,19 @@ class Config:
         "5": 100, "6": 50, "7": 30, "8": 15
     }
 
-    # Estados del Juego (ahora como constantes dentro de la configuración)
+    # Estados del Juego
     STATE_MENU = 0
     STATE_SELECT_PLAYERS = 1
     STATE_SELECT_SCORE = 2
     STATE_GAMEPLAY = 3
     STATE_PAUSE = 4
     STATE_GAME_OVER = 5
-    STATE_SLEEP = 6 # Nuevo estado para el modo de bajo consumo
+    # Eliminado: STATE_SLEEP
 
     # Mapeo de Teclas Estándar para simular inputs de Arcade
+    # Las teclas 's' y 'w' ya no manejan la suspensión/despertar del sistema desde el juego,
+    # sino que se usarán para cualquier lógica interna que Pygame necesite.
+    # El control de energía lo manejará keyboard_monitor.c
     KEY_MAPPING = {
         pygame.K_UP: "UP",
         pygame.K_DOWN: "DOWN",
@@ -45,11 +46,13 @@ class Config:
         pygame.K_TAB: "TAB",
         pygame.K_1: "1", pygame.K_2: "2", pygame.K_3: "3", pygame.K_4: "4",
         pygame.K_5: "5", pygame.K_6: "6", pygame.K_7: "7", pygame.K_8: "8",
-        pygame.K_s: "SLEEP",
-        pygame.K_w: "WAKEUP"
+        #pygame.K_s: "SLEEP", # Eliminado
+        #pygame.K_w: "WAKEUP" # Eliminado
+        pygame.K_s: "S_KEY", # Se mantiene por si 's' tiene alguna otra función en el juego
+        pygame.K_w: "W_KEY"  # Se mantiene por si 'w' tiene alguna otra función en el juego
     }
 
-    # Eventos Personalizados (ahora definidos directamente aquí)
+    # Eventos Personalizados (se mantienen por si se usan en el futuro, aunque no directamente por GPIO)
     EVENT_ARCADE_INPUT = pygame.USEREVENT + 1
     EVENT_SCORE = pygame.USEREVENT + 2
     EVENT_SYSTEM_CONTROL = pygame.USEREVENT + 3
@@ -68,10 +71,9 @@ class ResourceManager:
 
     def _load_fonts(self):
         try:
-            # Carga de las fuentes específicas desde la carpeta 'assets/fonts'
             self.fonts['large'] = pygame.font.Font(os.path.join('assets', 'fonts', 'predataur.ttf'), 74)
             self.fonts['medium'] = pygame.font.Font(os.path.join('assets', 'fonts', 'electromagnetic.otf'), 50)
-            self.fonts['small'] = pygame.font.Font(os.path.join('assets', 'fonts', 'electromagnetic.otf'), 36) # arcade.ttf para texto pequeño
+            self.fonts['small'] = pygame.font.Font(os.path.join('assets', 'fonts', 'electromagnetic.otf'), 36)
         except Exception as e:
             print(f"Error cargando fuentes: {e}")
             self.fonts['large'] = pygame.font.Font(None, 74)
@@ -80,47 +82,36 @@ class ResourceManager:
 
     def _load_sounds(self):
         try:
-
             self.sounds['points'] = pygame.mixer.Sound(os.path.join('assets', 'sounds', 'points.wav'))
             self.sounds['game_over'] = pygame.mixer.Sound(os.path.join('assets', 'sounds', 'gameover.wav'))
             self.sounds['button'] = pygame.mixer.Sound(os.path.join('assets', 'sounds', 'button.wav'))
             self.sounds['fanfare'] = pygame.mixer.Sound(os.path.join('assets', 'sounds', 'fanfare.mp3'))
+            # Asegúrate de tener un archivo background.wav o gameplay_music.wav si quieres música
         except pygame.error as e:
             print(f"Advertencia: No se pudieron cargar los sonidos. Asegúrate de que los archivos existan en 'assets/sounds/'. Error: {e}")
-            # Si un sonido no se carga, se establece a None para evitar errores posteriores.
-            # self.sounds['background'] = self.sounds['points'] = self.sounds['game_over'] = None # <--- Removido
             self.sounds['points'] = self.sounds['game_over'] = None
             self.sounds['button'] = self.sounds['fanfare'] = None
 
     def load_animated_background(self, state_name, screen_width, screen_height):
-        """
-        Carga una secuencia de imágenes para un fondo animado de un estado dado.
-        state_name debe corresponder al nombre de la carpeta (ej. 'state_inicio', 'state_pause').
-        """
-        # Si ya se cargaron los frames para este estado, los devuelve directamente.
+        path = os.path.join('assets', state_name)
+        images_list = []
         if state_name in self.animated_backgrounds:
             return self.animated_backgrounds[state_name]
 
-        path = os.path.join('assets', state_name)
-        images_list = []
         try:
-            # Lista todos los archivos en la carpeta del estado y los ordena
-            # Esto es crucial para que la animación se vea en orden y para estados con una sola imagen.
             files = sorted([f for f in os.listdir(path) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp'))])
 
             if not files:
                 print(f"Advertencia: No se encontraron imágenes en la carpeta '{path}'. Asegúrate de que existan y sean PNG/JPG.")
-                self.animated_backgrounds[state_name] = [] # Almacena una lista vacía para evitar reintentos.
+                self.animated_backgrounds[state_name] = []
                 return []
 
             for filename in files:
                 img_path = os.path.join(path, filename)
                 image = pygame.image.load(img_path).convert_alpha()  
-                # Escala la imagen al tamaño de la pantalla
                 image = pygame.transform.scale(image, (screen_width, screen_height))
                 images_list.append(image)
 
-            # Almacena la lista de imágenes para no tener que cargarlas de nuevo
             self.animated_backgrounds[state_name] = images_list
             return images_list
         except pygame.error as e:
@@ -134,11 +125,9 @@ class ResourceManager:
 
 
     def get_font(self, font_size):
-        """Devuelve una fuente por su clave (ej. 'large', 'medium', 'small')."""
         return self.fonts.get(font_size)
 
     def get_sound(self, sound_name):
-        """Devuelve un objeto Sound por su clave (ej. 'background', 'button')."""
         return self.sounds.get(sound_name)
 
 
@@ -155,19 +144,8 @@ class DrawingUtils:
         surface.blit(text_surface, text_rect)
 
 
-# --- Clase Dummy para ArcadeInputReader ---
-class ArcadeInputReader:
-    def __init__(self):
-        print("ArcadeInputReader (Dummy): Inicializado para entorno local.")
-
-    def start(self):
-        print("ArcadeInputReader (Dummy): Método start llamado. No hay GPIO real.")
-        pass
-
-    def stop(self):
-        print("ArcadeInputReader (Dummy): Método stop llamado. No hay GPIO real.")
-        pass
-
+# --- Eliminada: Clase Dummy para ArcadeInputReader ---
+# La funcionalidad de lectura de GPIO es manejada por el driver del kernel.
 
 # --- Clases de Pantalla/Estado del Juego ---
 class GameState:
@@ -180,12 +158,10 @@ class GameState:
         self.animation_finished = False
 
     def enter_state(self):
-        # Implementar en subclases si se necesita una acción al entrar al estado
         self.background_frames = []
         self.current_frame_index = 0
         self.last_frame_time = pygame.time.get_ticks()
         self.animation_finished = False
-
 
     def handle_input(self, key_name):
         raise NotImplementedError
@@ -198,7 +174,7 @@ class GameState:
                 if self.current_frame_index < len(self.background_frames) - 1:
                     self.current_frame_index += 1
                 else:
-                    self.animation_finished = True # La animación ha llegado al último frame
+                    self.animation_finished = True
 
     def draw(self, screen):
         if self.background_frames and self.current_frame_index < len(self.background_frames):
@@ -218,18 +194,19 @@ class MenuState(GameState):
         self.current_frame_index = 0
         self.last_frame_time = pygame.time.get_ticks()
         self.animation_finished = False
-        # Iniciar la música de fondo del menú
         if os.path.exists(os.path.join('assets', 'sounds', 'background.wav')):
             pygame.mixer.music.load(os.path.join('assets', 'sounds', 'background.wav'))
-            pygame.mixer.music.play(-1) # Reproducir en bucle
-
+            pygame.mixer.music.play(-1)
 
     def handle_input(self, key_name):
         if key_name == "UP":
             self.selection_index = (self.selection_index - 1 + len(self.options)) % len(self.options)
+            if self.game.resources.get_sound('button'): self.game.resources.get_sound('button').play()
         elif key_name == "DOWN":
             self.selection_index = (self.selection_index + 1) % len(self.options)
+            if self.game.resources.get_sound('button'): self.game.resources.get_sound('button').play()
         elif key_name == "ENTER":
+            if self.game.resources.get_sound('button'): self.game.resources.get_sound('button').play()
             if self.selection_index == 0:
                 self.game.set_state(Config.STATE_SELECT_PLAYERS)
             elif self.selection_index == 1:
@@ -239,16 +216,12 @@ class MenuState(GameState):
                 self.game.set_state(Config.STATE_GAMEPLAY)
 
     def draw(self, screen):
-        super().draw(screen) # Dibuja el fondo animado o el último frame
-
-        #DrawingUtils.draw_text(screen, "BOLIRRANA ARCADE", self.game.resources.fonts['large'], Config.YELLOW, Config.SCREEN_WIDTH // 2, Config.SCREEN_HEIGHT // 4)
+        super().draw(screen)
 
         y_start = Config.SCREEN_HEIGHT // 2 - 50
         for i, option in enumerate(self.options):
             color = Config.GREEN if self.selection_index == i else Config.WHITE
             DrawingUtils.draw_text(screen, option, self.game.resources.fonts['medium'], color, Config.SCREEN_WIDTH // 2, y_start + i * 60)
-
-        #DrawingUtils.draw_text(screen, "UP/DOWN para navegar, ENTER para seleccionar", self.game.resources.fonts['small'], Config.GRAY, Config.SCREEN_WIDTH // 2, Config.SCREEN_HEIGHT * 7 // 8)
         pygame.display.flip()
 
 class SelectPlayersState(GameState):
@@ -262,32 +235,28 @@ class SelectPlayersState(GameState):
         self.current_frame_index = 0
         self.last_frame_time = pygame.time.get_ticks()
         self.animation_finished = False
-        # Puedes decidir si quieres una música diferente o silencio en este estado
-        # Por ahora, no se reproduce música aquí, se detendrá la música del menú.
 
     def handle_input(self, key_name):
         if key_name == "UP":
             self.current_idx = (self.current_idx - 1 + len(Config.NUM_JUGADORES_OPTIONS)) % len(Config.NUM_JUGADORES_OPTIONS)
             self.game.num_players_selected = Config.NUM_JUGADORES_OPTIONS[self.current_idx]
+            if self.game.resources.get_sound('button'): self.game.resources.get_sound('button').play()
         elif key_name == "DOWN":
             self.current_idx = (self.current_idx + 1) % len(Config.NUM_JUGADORES_OPTIONS)
             self.game.num_players_selected = Config.NUM_JUGADORES_OPTIONS[self.current_idx]
+            if self.game.resources.get_sound('button'): self.game.resources.get_sound('button').play()
         elif key_name == "ENTER":
             print(f"Config: {self.game.num_players_selected} jugadores seleccionados.")
+            if self.game.resources.get_sound('button'): self.game.resources.get_sound('button').play()
             self.game.set_state(Config.STATE_MENU)
 
     def draw(self, screen):
-        super().draw(screen) # Dibuja el fondo animado o el último frame
-
-        #DrawingUtils.draw_text(screen, "SELECCIONAR JUGADORES", self.game.resources.fonts['large'], Config.YELLOW, Config.SCREEN_WIDTH // 2, Config.SCREEN_HEIGHT // 6)
+        super().draw(screen)
 
         y_start = Config.SCREEN_HEIGHT // 3
         for i, num_jug in enumerate(Config.NUM_JUGADORES_OPTIONS):
             color = Config.GREEN if num_jug == self.game.num_players_selected else Config.WHITE
             DrawingUtils.draw_text(screen, f"{num_jug} Jugadores", self.game.resources.fonts['medium'], color, Config.SCREEN_WIDTH // 2, y_start + i * 50)
-
-        #DrawingUtils.draw_text(screen, "UP/DOWN: Seleccionar", self.game.resources.fonts['small'], Config.GRAY, Config.SCREEN_WIDTH // 2, Config.SCREEN_HEIGHT * 7 // 8 - 30)
-        #DrawingUtils.draw_text(screen, "ENTER: Confirmar", self.game.resources.fonts['small'], Config.YELLOW, Config.SCREEN_WIDTH // 2, Config.SCREEN_HEIGHT * 7 // 8)
         pygame.display.flip()
 
 class SelectScoreState(GameState):
@@ -301,33 +270,29 @@ class SelectScoreState(GameState):
         self.current_frame_index = 0
         self.last_frame_time = pygame.time.get_ticks()
         self.animation_finished = False
-        # Puedes decidir si quieres una música diferente o silencio en este estado
 
     def handle_input(self, key_name):
         if key_name == "UP":
             self.current_idx = (self.current_idx - 1 + len(Config.PUNTAJE_OBJETIVO_OPTIONS)) % len(Config.PUNTAJE_OBJETIVO_OPTIONS)
             self.game.game_target_score = Config.PUNTAJE_OBJETIVO_OPTIONS[self.current_idx]
+            if self.game.resources.get_sound('button'): self.game.resources.get_sound('button').play()
         elif key_name == "DOWN":
             self.current_idx = (self.current_idx + 1) % len(Config.PUNTAJE_OBJETIVO_OPTIONS)
             self.game.game_target_score = Config.PUNTAJE_OBJETIVO_OPTIONS[self.current_idx]
+            if self.game.resources.get_sound('button'): self.game.resources.get_sound('button').play()
         elif key_name == "ENTER":
             print(f"Config: {self.game.game_target_score} puntos objetivo seleccionados.")
+            if self.game.resources.get_sound('button'): self.game.resources.get_sound('button').play()
             self.game.set_state(Config.STATE_MENU)
 
     def draw(self, screen):
-        super().draw(screen) # Dibuja el fondo animado o el último frame
-
-        #DrawingUtils.draw_text(screen, "SELECCIONAR PUNTAJE", self.game.resources.fonts['large'], Config.YELLOW, Config.SCREEN_WIDTH // 2, Config.SCREEN_HEIGHT // 6)
+        super().draw(screen)
 
         y_start = Config.SCREEN_HEIGHT // 3
         for i, score_opt in enumerate(Config.PUNTAJE_OBJETIVO_OPTIONS):
             color = Config.GREEN if score_opt == self.game.game_target_score else Config.WHITE
             DrawingUtils.draw_text(screen, f"{score_opt} Puntos", self.game.resources.fonts['medium'], color, Config.SCREEN_WIDTH // 2, y_start + i * 50)
-
-        #DrawingUtils.draw_text(screen, "UP/DOWN: Seleccionar", self.game.resources.fonts['small'], Config.GRAY, Config.SCREEN_WIDTH // 2, Config.SCREEN_HEIGHT * 7 // 8 - 30)
-        #DrawingUtils.draw_text(screen, "ENTER: Confirmar", self.game.resources.fonts['small'], Config.YELLOW, Config.SCREEN_WIDTH // 2, Config.SCREEN_HEIGHT * 7 // 8)
         pygame.display.flip()
-
 
 class GameplayState(GameState):
     def __init__(self, game):
@@ -335,7 +300,7 @@ class GameplayState(GameState):
         self.display_score_feedback = False
         self.score_feedback_value = 0
         self.score_feedback_start_time = 0
-        self.score_feedback_duration_ms = 1000 # Duración de 1 segundo
+        self.score_feedback_duration_ms = 1000
 
     def enter_state(self):
         super().enter_state()
@@ -343,15 +308,13 @@ class GameplayState(GameState):
         self.current_frame_index = 0
         self.last_frame_time = pygame.time.get_ticks()
         self.animation_finished = False
-        self.display_score_feedback = False # Reiniciar al entrar al estado
-        # Iniciar la música de fondo del juego
-        if os.path.exists(os.path.join('assets', 'sounds', 'gameplay_music.wav')): # Asumiendo un archivo de música para gameplay
+        self.display_score_feedback = False
+        if os.path.exists(os.path.join('assets', 'sounds', 'gameplay_music.wav')):
             pygame.mixer.music.load(os.path.join('assets', 'sounds', 'gameplay_music.wav'))
             pygame.mixer.music.play(-1)
-        elif os.path.exists(os.path.join('assets', 'sounds', 'background.wav')): # Fallback si no hay música específica de gameplay
+        elif os.path.exists(os.path.join('assets', 'sounds', 'background.wav')):
             pygame.mixer.music.load(os.path.join('assets', 'sounds', 'background.wav'))
             pygame.mixer.music.play(-1)
-
 
     def handle_input(self, key_name):
         current_player = self.game.players[self.game.current_player_index]
@@ -361,13 +324,15 @@ class GameplayState(GameState):
             if self.game.current_game_state == Config.STATE_GAMEPLAY:
                 self.game.current_player_index = (self.game.current_player_index + 1) % len(self.game.players)
                 print(f"Juego: Turno de: {self.game.players[self.game.current_player_index]['name']}")
-            self.display_score_feedback = False # Ocultar feedback al cambiar de turno
+            self.display_score_feedback = False
+            if self.game.resources.get_sound('button'): self.game.resources.get_sound('button').play()
         elif key_name == "ENTER":
             self.game.set_state(Config.STATE_PAUSE)
             self.game.pause_menu_selection_index = 0
-            pygame.mixer.music.pause() # Pausar la música al entrar en pausa
+            pygame.mixer.music.pause()
             print("Juego: Pausado.")
-            self.display_score_feedback = False # Ocultar feedback al pausar
+            self.display_score_feedback = False
+            if self.game.resources.get_sound('button'): self.game.resources.get_sound('button').play()
         elif key_name in Config.SCORE_MAPPING:
             score_value = Config.SCORE_MAPPING[key_name]
             if not current_player['has_won']:
@@ -375,7 +340,6 @@ class GameplayState(GameState):
                 print(f"Juego: {current_player['name']} obtuvo {score_value} puntos. Total: {current_player['score']}")
                 if self.game.resources.sounds['points']: self.game.resources.sounds['points'].play()
 
-                # Activar feedback visual de puntuación
                 self.score_feedback_value = score_value
                 self.score_feedback_start_time = pygame.time.get_ticks()
                 self.display_score_feedback = True
@@ -389,39 +353,33 @@ class GameplayState(GameState):
             print(f"¡{player['name']} alcanzó el objetivo! Es el puesto #{len(self.game.winners)}")
 
             if (len(self.game.winners) >= 2 and self.game.num_players_selected > 2) or all(p['has_won'] for p in self.game.players):
-                pygame.mixer.music.stop() # Detener la música de fondo antes de ir a Game Over
+                pygame.mixer.music.stop()
                 self.game.set_state(Config.STATE_GAME_OVER)
                 if self.game.resources.sounds['fanfare']:
                     self.game.resources.sounds['fanfare'].play()
                 print("Juego: Fin de partida alcanzado.")
             elif self.game.resources.sounds['game_over']:
-                # Solo reproducir game_over si no se va a game_over state inmediatamente
                 if not pygame.mixer.get_busy() or self.game.resources.sounds['game_over'].get_num_channels() == 0:
                     self.game.resources.sounds['game_over'].play()
 
     def update(self):
-        super().update() # Llama al update de la clase base para la animación
+        super().update()
 
-        # Lógica para controlar la duración del feedback de puntuación
         if self.display_score_feedback:
             if pygame.time.get_ticks() - self.score_feedback_start_time > self.score_feedback_duration_ms:
-                self.display_score_feedback = False # Desactivar feedback después de 1 segundo
-
+                self.display_score_feedback = False
 
     def draw(self, screen):
-        super().draw(screen) # Dibuja el fondo animado o el último frame
+        super().draw(screen)
 
         current_player = self.game.players[self.game.current_player_index]
 
         DrawingUtils.draw_text(screen, f"Turno del  {current_player['name']}", self.game.resources.fonts['medium'], Config.YELLOW, Config.SCREEN_WIDTH // 2, Config.SCREEN_HEIGHT // 4)
         DrawingUtils.draw_text(screen, f"Puntaje  {current_player['score']}", self.game.resources.fonts['medium'], Config.WHITE, Config.SCREEN_WIDTH // 2, Config.SCREEN_HEIGHT // 2 - 50)
 
-        # Dibujar feedback de puntuación si está activo
         if self.display_score_feedback:
-            # Puedes ajustar la posición y el color si lo deseas
             feedback_text = f"* {self.score_feedback_value} *"
             DrawingUtils.draw_text(screen, feedback_text, self.game.resources.fonts['large'], Config.GREEN, Config.SCREEN_WIDTH // 2, Config.SCREEN_HEIGHT // 2 + 50)
-
 
         y_offset_start = Config.SCREEN_HEIGHT - 100
         total_width_for_players = Config.SCREEN_WIDTH - 200
@@ -431,8 +389,6 @@ class GameplayState(GameState):
         for i, player in enumerate(self.game.players):
             color = Config.YELLOW if i == self.game.current_player_index else Config.WHITE
             DrawingUtils.draw_text(screen, f"{player['name']}  {player['score']}", self.game.resources.fonts['small'], color, start_x + player_spacing * i, y_offset_start, center=False)
-
-        #DrawingUtils.draw_text(screen, "TAB para cambiar de jugador / ENTER para Pausa", self.game.resources.fonts['small'], Config.GRAY, Config.SCREEN_WIDTH // 2, Config.SCREEN_HEIGHT * 15 // 16)
 
         pygame.display.flip()
 
@@ -444,90 +400,73 @@ class PauseState(GameState):
 
     def enter_state(self):
         super().enter_state()
-        # Para el estado de pausa, solo hay una imagen, no una secuencia animada.
-        # Por lo tanto, cargamos esa única imagen y la marcamos como animación terminada.
         self.background_frames = self.game.resources.load_animated_background('state_pause', Config.SCREEN_WIDTH, Config.SCREEN_HEIGHT)
         self.current_frame_index = 0
         self.last_frame_time = pygame.time.get_ticks()
-        self.animation_finished = True # Siempre es true para una sola imagen
-
-        # La música de fondo del juego debería estar pausada desde GameplayState.handle_input
+        self.animation_finished = True
 
     def handle_input(self, key_name):
         if key_name == "UP":
             self.selection_index = (self.selection_index - 1 + len(self.options)) % len(self.options)
+            if self.game.resources.get_sound('button'): self.game.resources.get_sound('button').play()
         elif key_name == "DOWN":
             self.selection_index = (self.selection_index + 1) % len(self.options)
+            if self.game.resources.get_sound('button'): self.game.resources.get_sound('button').play()
         elif key_name == "ENTER":
+            if self.game.resources.get_sound('button'): self.game.resources.get_sound('button').play()
             if self.selection_index == 0:
                 self.game.set_state(Config.STATE_GAMEPLAY)
-                pygame.mixer.music.unpause() # Reanudar la música al continuar
+                pygame.mixer.music.unpause()
                 print("Juego: Reanudado.")
             elif self.selection_index == 1:
                 self.game.set_state(Config.STATE_MENU)
                 self.game.reset_game_state_variables()
-                pygame.mixer.music.stop() # Detener la música al salir de la partida (el menú la iniciará de nuevo)
+                pygame.mixer.music.stop()
                 print("Juego: Saliendo de la partida.")
 
     def draw(self, screen):
         super().draw(screen)
 
-
-        y_start = Config.SCREEN_HEIGHT // 2 + 80 # ajustar la posicion de  lo que se dibuje
+        y_start = Config.SCREEN_HEIGHT // 2 + 80
         for i, option in enumerate(self.options):
             color = Config.GREEN if self.selection_index == i else Config.WHITE
             DrawingUtils.draw_text(screen, option, self.game.resources.fonts['medium'], color, Config.SCREEN_WIDTH // 2, y_start + i * 60)
-
-        #DrawingUtils.draw_text(screen, "UP/DOWN: Seleccionar, ENTER: Confirmar", self.game.resources.fonts['small'], Config.GRAY, Config.SCREEN_WIDTH // 2, Config.SCREEN_HEIGHT * 3 // 4)
         pygame.display.flip()
 
 class GameOverState(GameState):
     def __init__(self, game):
         super().__init__(game)
-        # No se necesita last_game_over_time ya que no hay dependencia temporal para salir
 
     def enter_state(self):
         super().enter_state()
         self.background_frames = self.game.resources.load_animated_background('state_win', Config.SCREEN_WIDTH, Config.SCREEN_HEIGHT)
         self.current_frame_index = 0
         self.last_frame_time = pygame.time.get_ticks()
-        self.animation_finished = False # Para la animación de la pantalla de victoria
+        self.animation_finished = False
 
-        # La fanfarria se reproduce al final de GameplayState cuando se detectan 2 ganadores
-        # Si se llega aquí y no se reprodujo, es un caso de todos ganando (menos de 2 jugadores) o error.
-        # En el caso de que la fanfarria no se haya reproducido antes y haya al menos 2 ganadores
-        # O si solo hay un ganador y es el único jugador (o solo hay un jugador)
         if len(self.game.winners) > 0 and 'fanfare' in self.game.resources.sounds and not pygame.mixer.get_busy():
-            # Si no hay ningún sonido reproduciéndose, reproduce la fanfarria
             self.game.resources.sounds['fanfare'].play()
         elif len(self.game.winners) == 0 and 'game_over' in self.game.resources.sounds and not pygame.mixer.get_busy():
-            # Esto podría ocurrir si el juego termina por alguna razón sin un ganador claro.
             self.game.resources.sounds['game_over'].play()
-
 
     def handle_input(self, key_name):
         if key_name == "ENTER":
-            # Detener cualquier sonido que se esté reproduciendo (fanfarria o game_over)
             pygame.mixer.stop()
             self.game.set_state(Config.STATE_MENU)
             self.game.reset_game_state_variables()
-            # La música de fondo del menú se iniciará en enter_state del MenuState
             print("Juego: Regresando al menú principal.")
 
     def update(self):
-        super().update() # Llama al update de la clase base para la animación
+        super().update()
 
     def draw(self, screen):
-        super().draw(screen) # Dibuja el fondo animado o el último frame
+        super().draw(screen)
 
         if len(self.game.winners) > 0:
-            #DrawingUtils.draw_text(screen, "¡FIN DEL JUEGO!", self.game.resources.fonts['large'], Config.GREEN, Config.SCREEN_WIDTH // 2, Config.SCREEN_HEIGHT // 4)
-
             y_offset = Config.SCREEN_HEIGHT // 2 + 60
             DrawingUtils.draw_text(screen, "GANADORES ", self.game.resources.fonts['large'], Config.GREEN, Config.SCREEN_WIDTH // 2, y_offset)
             y_offset += 50
 
-            # Asegurarse de que winners[0] exista antes de intentar acceder
             if len(self.game.winners) > 0:
                 DrawingUtils.draw_text(screen, f"1er Puesto: {self.game.winners[0]['name']}     {self.game.winners[0]['score']} puntos", self.game.resources.fonts['medium'], Config.YELLOW, Config.SCREEN_WIDTH // 2, y_offset)
                 y_offset += 40
@@ -543,29 +482,7 @@ class GameOverState(GameState):
 
         pygame.display.flip()
 
-class SleepState(GameState):
-    def __init__(self, game):
-        super().__init__(game)
-        self.long_press_start_time = 0 # Para detectar si la 's' se mantiene presionada
-
-    def enter_state(self):
-        # En el modo SLEEP, no se reproduce música de fondo del juego
-        self.background_frames = self.game.resources.load_animated_background('state_sleep', Config.SCREEN_WIDTH, Config.SCREEN_HEIGHT)
-        self.current_frame_index = 0
-        self.last_frame_time = pygame.time.get_ticks()
-        self.animation_finished = True # Probablemente solo una imagen de sleep
-        self.long_press_start_time = 0 # Reiniciar al entrar al estado
-
-    def handle_input(self, key_name):
-        # En el modo SLEEP, solo la tecla WAKEUP debe ser procesada directamente por el bucle principal.
-        # La 's' para salir o apagar se maneja en el bucle principal de Game.
-        pass
-
-    def draw(self, screen):
-        super().draw(screen) # Dibuja el fondo de sleep (única imagen)
-        DrawingUtils.draw_text(screen, "Modo de Bajo Consumo...", self.game.resources.fonts['medium'], Config.WHITE, Config.SCREEN_WIDTH // 2, Config.SCREEN_HEIGHT // 2)
-        pygame.display.flip()
-
+# Eliminada: Clase SleepState
 
 # --- Clase Principal del Juego ---
 class Game:
@@ -576,9 +493,10 @@ class Game:
         self.screen = pygame.display.set_mode((Config.SCREEN_WIDTH, Config.SCREEN_HEIGHT))
         pygame.display.set_caption("Bolirrana")
         self.clock = pygame.time.Clock()
+        pygame.mouse.set_visible(False) # Oculta el cursor del ratón
 
         self.resources = ResourceManager()
-        self.gpio_reader = ArcadeInputReader()
+        # Eliminada: self.gpio_reader = ArcadeInputReader()
 
         self.current_game_state = Config.STATE_MENU
         self.players = []
@@ -586,8 +504,8 @@ class Game:
         self.game_target_score = Config.PUNTAJE_OBJETIVO_OPTIONS[0]
         self.num_players_selected = Config.NUM_JUGADORES_OPTIONS[0]
         self.winners = []
-        self.is_system_awake = True
-        self.s_key_pressed_time = 0 # Para el monitoreo de la tecla 'S'
+        # Eliminado: self.is_system_awake
+        self.s_key_pressed_time = 0 # Solo para detectar si el juego debe salir por 's' prolongada
 
         self.states = {
             Config.STATE_MENU: MenuState(self),
@@ -596,17 +514,16 @@ class Game:
             Config.STATE_GAMEPLAY: GameplayState(self),
             Config.STATE_PAUSE: PauseState(self),
             Config.STATE_GAME_OVER: GameOverState(self),
-            Config.STATE_SLEEP: SleepState(self)
+            # Eliminado: Config.STATE_SLEEP: SleepState(self)
         }
         self.current_state_handler = self.states[self.current_game_state]
-        self.current_state_handler.enter_state() # Llama a enter_state del estado inicial
+        self.current_state_handler.enter_state()
 
     def set_state(self, new_state):
-        # Detener cualquier música que se esté reproduciendo antes de cambiar de estado
         pygame.mixer.music.stop()
         self.current_game_state = new_state
         self.current_state_handler = self.states[new_state]
-        self.current_state_handler.enter_state() # Asegura que el nuevo estado se inicialice correctamente
+        self.current_state_handler.enter_state()
         print(f"Cambio de estado a: {new_state}")
 
     def reset_game_state_variables(self):
@@ -620,28 +537,12 @@ class Game:
         for i in range(self.num_players_selected):
             self.players.append({"name": f"Jugador {i+1}", "score": 0, "has_won": False})
 
-        # La música de fondo se inicia en el enter_state de GameplayState
         print(f"Juego reiniciado. {len(self.players)} jugadores. Objetivo: {self.game_target_score}")
 
-    def handle_system_power(self, key_name):
-        if key_name == "SLEEP":
-            if self.is_system_awake:
-                print("Juego: Entrando en modo de bajo consumo.")
-                self.is_system_awake = False
-                self.screen = pygame.display.set_mode((Config.SCREEN_WIDTH, Config.SCREEN_HEIGHT), pygame.NOFRAME)
-                pygame.mouse.set_visible(False)
-                pygame.mixer.music.stop() # Asegúrate de detener la música al entrar en suspensión
-                self.set_state(Config.STATE_SLEEP)
-        elif key_name == "WAKEUP":
-            if not self.is_system_awake:
-                print("Juego: Saliendo de modo de bajo consumo.")
-                self.is_system_awake = True
-                self.screen = pygame.display.set_mode((Config.SCREEN_WIDTH, Config.SCREEN_HEIGHT))
-                pygame.mouse.set_visible(False)
-                self.set_state(Config.STATE_MENU) # Volver siempre al menú principal al despertar
+    # Eliminada: handle_system_power
 
     def run(self):
-        self.gpio_reader.start()
+        # Eliminada: self.gpio_reader.start()
         running = True
         while running:
             for event in pygame.event.get():
@@ -653,48 +554,44 @@ class Game:
                     if event.key in Config.KEY_MAPPING:
                         key_name = Config.KEY_MAPPING[event.key]
 
-                    # 1. Manejo de la tecla 'S' para el temporizador de salida/sleep
+                    # Lógica para detectar la pulsación de la tecla 's'
+                    # para la posible salida del juego por pulsación prolongada.
+                    # El control de suspensión/apagado del sistema lo hace keyboard_monitor.c
                     if event.key == pygame.K_s:
-                        if self.s_key_pressed_time == 0: # Si no estaba presionada, registrar el inicio
+                        if self.s_key_pressed_time == 0:
                             self.s_key_pressed_time = pygame.time.get_ticks()
+                    else:
+                        # Si cualquier otra tecla es presionada, resetea el temporizador de 's'
+                        # para evitar una salida accidental del juego si 's' se presiona y otra tecla luego.
+                        self.s_key_pressed_time = 0
 
-                    # 2. Manejo de WAKEUP (si el sistema está dormido, cualquier tecla lo despierta)
-                    # Excluimos la tecla 'S' aquí para evitar conflictos con su lógica de larga pulsación/sleep.
-                    elif not self.is_system_awake and key_name: # Si estamos dormidos y se presiona CUALQUIER tecla (excepto 'S')
-                        self.handle_system_power("WAKEUP")
-                        # No procesamos más entradas en este frame, ya que el estado ha cambiado.
-                        continue # Salta al siguiente evento para evitar doble procesamiento
-
-
-                    # 3. Procesar entradas normales (si el sistema está despierto)
-                    if self.is_system_awake and key_name and key_name not in ["SLEEP", "WAKEUP"]: # "SLEEP" y "WAKEUP" se manejan fuera del state handler
-                        if self.resources.get_sound('button'):
+                    # Procesar entradas normales (todas las teclas mapeadas)
+                    if key_name:
+                        if self.resources.get_sound('button') and key_name not in ["S_KEY", "W_KEY"]:
+                            # Reproduce el sonido del botón solo si no es la 's' o 'w'
+                            # ya que la 's' tiene una lógica especial de salida.
                             self.resources.get_sound('button').play()
                         self.current_state_handler.handle_input(key_name)
 
-
                 elif event.type == pygame.KEYUP:
                     if event.key == pygame.K_s:
-                        # Si la tecla 'S' se suelta y fue una pulsación corta, y el sistema estaba despierto,
-                        # significa que el usuario quería ir al modo sleep.
-                        if self.s_key_pressed_time != 0 and self.is_system_awake and \
-                           (pygame.time.get_ticks() - self.s_key_pressed_time < 3000):
-                            self.handle_system_power("SLEEP")
-                        self.s_key_pressed_time = 0 # Siempre reiniciar el tiempo al soltar la tecla
+                        # Siempre reiniciar el tiempo al soltar la tecla 's'.
+                        # La lógica de suspensión del sistema ya no está aquí.
+                        self.s_key_pressed_time = 0
 
             # Lógica para detectar pulsación prolongada de la tecla 's' (para salir del programa)
+            # Esta es la única lógica de 's' que queda en el juego.
             if self.s_key_pressed_time != 0 and pygame.time.get_ticks() - self.s_key_pressed_time > 3000:
                 print("Tecla 's' mantenida por 3 segundos. Saliendo del programa.")
-                running = False # Esto enviará un QUIT implícito al salir del bucle
+                running = False
 
-            # Lógica del juego y dibujo
             self.current_state_handler.update()
             self.current_state_handler.draw(self.screen)
 
             self.clock.tick(Config.FPS)
 
-        print("Juego: Saliendo...")
-        self.gpio_reader.stop()
+        print("Juego: Saliendo limpiamente...")
+        # Eliminada: self.gpio_reader.stop()
         pygame.quit()
         sys.exit()
 
@@ -702,15 +599,3 @@ class Game:
 if __name__ == "__main__":
     game = Game()
     game.run()
-
-
-
-
-"""
-Notas
-arreglar bucle de tecla s una ves se entra al estado 6 no vuelve a salir a menos que se presione durante 3 segundos
-arreglar el sonido de la tecla s
-eliminar letras feas
-cambiar tipografia
-arreglar animacion estado 3 playing
-"""
