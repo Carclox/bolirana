@@ -2,6 +2,19 @@ import pygame
 import sys
 import os
 
+# --- Función para manejar rutas de recursos en PyInstaller ---
+def resource_path(relative_path):
+    """
+    Obtiene la ruta absoluta a un recurso, funciona tanto en desarrollo como en PyInstaller.
+    PyInstaller crea una carpeta temporal y almacena su ruta en _MEIPASS.
+    Esto se hace con objetivo de crar un archivo ejecutable en caso de que se requiera.
+    """
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 # --- Módulo de Constantes y Configuraciones ---
 class Config:
     SCREEN_WIDTH = 1280
@@ -33,12 +46,8 @@ class Config:
     STATE_GAMEPLAY = 3
     STATE_PAUSE = 4
     STATE_GAME_OVER = 5
-    # Eliminado: STATE_SLEEP
 
     # Mapeo de Teclas Estándar para simular inputs de Arcade
-    # Las teclas 's' y 'w' ya no manejan la suspensión/despertar del sistema desde el juego,
-    # sino que se usarán para cualquier lógica interna que Pygame necesite.
-    # El control de energía lo manejará keyboard_monitor.c
     KEY_MAPPING = {
         pygame.K_UP: "UP",
         pygame.K_DOWN: "DOWN",
@@ -46,13 +55,11 @@ class Config:
         pygame.K_TAB: "TAB",
         pygame.K_1: "1", pygame.K_2: "2", pygame.K_3: "3", pygame.K_4: "4",
         pygame.K_5: "5", pygame.K_6: "6", pygame.K_7: "7", pygame.K_8: "8",
-        #pygame.K_s: "SLEEP", # Eliminado
-        #pygame.K_w: "WAKEUP" # Eliminado
-        pygame.K_s: "S_KEY", # Se mantiene por si 's' tiene alguna otra función en el juego
-        pygame.K_w: "W_KEY"  # Se mantiene por si 'w' tiene alguna otra función en el juego
+        pygame.K_s: "S_KEY",
+        pygame.K_w: "W_KEY"
     }
 
-    # Eventos Personalizados (se mantienen por si se usan en el futuro, aunque no directamente por GPIO)
+    # Eventos Personalizados
     EVENT_ARCADE_INPUT = pygame.USEREVENT + 1
     EVENT_SCORE = pygame.USEREVENT + 2
     EVENT_SYSTEM_CONTROL = pygame.USEREVENT + 3
@@ -64,16 +71,17 @@ class ResourceManager:
         self.fonts = {}
         self.images = {}
         self.sounds = {}
-        self.animated_backgrounds = {} 
+        self.animated_backgrounds = {}
         self._load_fonts()
         self._load_sounds()
-   
+
 
     def _load_fonts(self):
         try:
-            self.fonts['large'] = pygame.font.Font(os.path.join('assets', 'fonts', 'predataur.ttf'), 74)
-            self.fonts['medium'] = pygame.font.Font(os.path.join('assets', 'fonts', 'electromagnetic.otf'), 50)
-            self.fonts['small'] = pygame.font.Font(os.path.join('assets', 'fonts', 'electromagnetic.otf'), 36)
+            # USO DE resource_path AQUI
+            self.fonts['large'] = pygame.font.Font(resource_path(os.path.join('assets', 'fonts', 'predataur.ttf')), 74)
+            self.fonts['medium'] = pygame.font.Font(resource_path(os.path.join('assets', 'fonts', 'electromagnetic.otf')), 50)
+            self.fonts['small'] = pygame.font.Font(resource_path(os.path.join('assets', 'fonts', 'electromagnetic.otf')), 36)
         except Exception as e:
             print(f"Error cargando fuentes: {e}")
             self.fonts['large'] = pygame.font.Font(None, 74)
@@ -82,23 +90,25 @@ class ResourceManager:
 
     def _load_sounds(self):
         try:
-            self.sounds['points'] = pygame.mixer.Sound(os.path.join('assets', 'sounds', 'points.wav'))
-            self.sounds['game_over'] = pygame.mixer.Sound(os.path.join('assets', 'sounds', 'gameover.wav'))
-            self.sounds['button'] = pygame.mixer.Sound(os.path.join('assets', 'sounds', 'button.wav'))
-            self.sounds['fanfare'] = pygame.mixer.Sound(os.path.join('assets', 'sounds', 'fanfare.mp3'))
-            # Asegúrate de tener un archivo background.wav o gameplay_music.wav si quieres música
+            # USO DE resource_path AQUI
+            self.sounds['points'] = pygame.mixer.Sound(resource_path(os.path.join('assets', 'sounds', 'points.wav')))
+            self.sounds['game_over'] = pygame.mixer.Sound(resource_path(os.path.join('assets', 'sounds', 'gameover.wav')))
+            self.sounds['button'] = pygame.mixer.Sound(resource_path(os.path.join('assets', 'sounds', 'button.wav')))
+            self.sounds['fanfare'] = pygame.mixer.Sound(resource_path(os.path.join('assets', 'sounds', 'fanfare.mp3')))
         except pygame.error as e:
             print(f"Advertencia: No se pudieron cargar los sonidos. Asegúrate de que los archivos existan en 'assets/sounds/'. Error: {e}")
             self.sounds['points'] = self.sounds['game_over'] = None
             self.sounds['button'] = self.sounds['fanfare'] = None
 
     def load_animated_background(self, state_name, screen_width, screen_height):
-        path = os.path.join('assets', state_name)
+        # USO DE resource_path AQUI
+        path = resource_path(os.path.join('assets', state_name))
         images_list = []
         if state_name in self.animated_backgrounds:
             return self.animated_backgrounds[state_name]
 
         try:
+            # os.listdir requiere la ruta real, que ahora resource_path proporciona
             files = sorted([f for f in os.listdir(path) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp'))])
 
             if not files:
@@ -107,8 +117,8 @@ class ResourceManager:
                 return []
 
             for filename in files:
-                img_path = os.path.join(path, filename)
-                image = pygame.image.load(img_path).convert_alpha()  
+                img_path = resource_path(os.path.join('assets', state_name, filename)) # USO DE resource_path AQUI para cada imagen
+                image = pygame.image.load(img_path).convert_alpha()
                 image = pygame.transform.scale(image, (screen_width, screen_height))
                 images_list.append(image)
 
@@ -118,7 +128,8 @@ class ResourceManager:
             print(f"Advertencia: No se pudieron cargar las imágenes para el estado '{state_name}'. Error: {e}")
             self.animated_backgrounds[state_name] = []
             return []
-        except FileNotFoundError:
+        except FileNotFoundError as e:
+            # Captura FileNotFoundError específicamente
             print(f"Advertencia: La carpeta de estado '{path}' no fue encontrada. Error: {e}")
             self.animated_backgrounds[state_name] = []
             return []
@@ -143,9 +154,6 @@ class DrawingUtils:
             text_rect.topleft = (x, y)
         surface.blit(text_surface, text_rect)
 
-
-# --- Eliminada: Clase Dummy para ArcadeInputReader ---
-# La funcionalidad de lectura de GPIO es manejada por el driver del kernel.
 
 # --- Clases de Pantalla/Estado del Juego ---
 class GameState:
@@ -194,8 +202,10 @@ class MenuState(GameState):
         self.current_frame_index = 0
         self.last_frame_time = pygame.time.get_ticks()
         self.animation_finished = False
-        if os.path.exists(os.path.join('assets', 'sounds', 'background.wav')):
-            pygame.mixer.music.load(os.path.join('assets', 'sounds', 'background.wav'))
+        # USO DE resource_path AQUI
+        background_music_path = resource_path(os.path.join('assets', 'sounds', 'background.wav'))
+        if os.path.exists(background_music_path):
+            pygame.mixer.music.load(background_music_path)
             pygame.mixer.music.play(-1)
 
     def handle_input(self, key_name):
@@ -288,7 +298,7 @@ class SelectScoreState(GameState):
     def draw(self, screen):
         super().draw(screen)
 
-        y_start = Config.SCREEN_HEIGHT // 3
+        y_start = Config.SCREEN_HEIGHT // 4 #3
         for i, score_opt in enumerate(Config.PUNTAJE_OBJETIVO_OPTIONS):
             color = Config.GREEN if score_opt == self.game.game_target_score else Config.WHITE
             DrawingUtils.draw_text(screen, f"{score_opt} Puntos", self.game.resources.fonts['medium'], color, Config.SCREEN_WIDTH // 2, y_start + i * 50)
@@ -309,12 +319,17 @@ class GameplayState(GameState):
         self.last_frame_time = pygame.time.get_ticks()
         self.animation_finished = False
         self.display_score_feedback = False
-        if os.path.exists(os.path.join('assets', 'sounds', 'gameplay_music.wav')):
-            pygame.mixer.music.load(os.path.join('assets', 'sounds', 'gameplay_music.wav'))
+        # USO DE resource_path AQUI
+        gameplay_music_path = resource_path(os.path.join('assets', 'sounds', 'gameplay_music.wav'))
+        background_music_path = resource_path(os.path.join('assets', 'sounds', 'background.wav'))
+
+        if os.path.exists(gameplay_music_path):
+            pygame.mixer.music.load(gameplay_music_path)
             pygame.mixer.music.play(-1)
-        elif os.path.exists(os.path.join('assets', 'sounds', 'background.wav')):
-            pygame.mixer.music.load(os.path.join('assets', 'sounds', 'background.wav'))
+        elif os.path.exists(background_music_path): # Fallback si no hay música de gameplay
+            pygame.mixer.music.load(background_music_path)
             pygame.mixer.music.play(-1)
+
 
     def handle_input(self, key_name):
         current_player = self.game.players[self.game.current_player_index]
@@ -482,8 +497,6 @@ class GameOverState(GameState):
 
         pygame.display.flip()
 
-# Eliminada: Clase SleepState
-
 # --- Clase Principal del Juego ---
 class Game:
     def __init__(self):
@@ -496,7 +509,6 @@ class Game:
         pygame.mouse.set_visible(False) # Oculta el cursor del ratón
 
         self.resources = ResourceManager()
-        # Eliminada: self.gpio_reader = ArcadeInputReader()
 
         self.current_game_state = Config.STATE_MENU
         self.players = []
@@ -504,8 +516,7 @@ class Game:
         self.game_target_score = Config.PUNTAJE_OBJETIVO_OPTIONS[0]
         self.num_players_selected = Config.NUM_JUGADORES_OPTIONS[0]
         self.winners = []
-        # Eliminado: self.is_system_awake
-        self.s_key_pressed_time = 0 # Solo para detectar si el juego debe salir por 's' prolongada
+        self.s_key_pressed_time = 0
 
         self.states = {
             Config.STATE_MENU: MenuState(self),
@@ -514,7 +525,6 @@ class Game:
             Config.STATE_GAMEPLAY: GameplayState(self),
             Config.STATE_PAUSE: PauseState(self),
             Config.STATE_GAME_OVER: GameOverState(self),
-            # Eliminado: Config.STATE_SLEEP: SleepState(self)
         }
         self.current_state_handler = self.states[self.current_game_state]
         self.current_state_handler.enter_state()
@@ -539,10 +549,7 @@ class Game:
 
         print(f"Juego reiniciado. {len(self.players)} jugadores. Objetivo: {self.game_target_score}")
 
-    # Eliminada: handle_system_power
-
     def run(self):
-        # Eliminada: self.gpio_reader.start()
         running = True
         while running:
             for event in pygame.event.get():
@@ -554,33 +561,21 @@ class Game:
                     if event.key in Config.KEY_MAPPING:
                         key_name = Config.KEY_MAPPING[event.key]
 
-                    # Lógica para detectar la pulsación de la tecla 's'
-                    # para la posible salida del juego por pulsación prolongada.
-                    # El control de suspensión/apagado del sistema lo hace keyboard_monitor.c
                     if event.key == pygame.K_s:
                         if self.s_key_pressed_time == 0:
                             self.s_key_pressed_time = pygame.time.get_ticks()
                     else:
-                        # Si cualquier otra tecla es presionada, resetea el temporizador de 's'
-                        # para evitar una salida accidental del juego si 's' se presiona y otra tecla luego.
                         self.s_key_pressed_time = 0
 
-                    # Procesar entradas normales (todas las teclas mapeadas)
                     if key_name:
                         if self.resources.get_sound('button') and key_name not in ["S_KEY", "W_KEY"]:
-                            # Reproduce el sonido del botón solo si no es la 's' o 'w'
-                            # ya que la 's' tiene una lógica especial de salida.
                             self.resources.get_sound('button').play()
                         self.current_state_handler.handle_input(key_name)
 
                 elif event.type == pygame.KEYUP:
                     if event.key == pygame.K_s:
-                        # Siempre reiniciar el tiempo al soltar la tecla 's'.
-                        # La lógica de suspensión del sistema ya no está aquí.
                         self.s_key_pressed_time = 0
 
-            # Lógica para detectar pulsación prolongada de la tecla 's' (para salir del programa)
-            # Esta es la única lógica de 's' que queda en el juego.
             if self.s_key_pressed_time != 0 and pygame.time.get_ticks() - self.s_key_pressed_time > 3000:
                 print("Tecla 's' mantenida por 3 segundos. Saliendo del programa.")
                 running = False
@@ -591,7 +586,6 @@ class Game:
             self.clock.tick(Config.FPS)
 
         print("Juego: Saliendo limpiamente...")
-        # Eliminada: self.gpio_reader.stop()
         pygame.quit()
         sys.exit()
 

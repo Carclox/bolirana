@@ -184,3 +184,8 @@ Durante el gameplay, si un jugador completa el objetivo de puntos, el programa o
 al siguinete turno de jugador que no haya completado el objetivo.
 
 Implementar interfaz de teclado virtual que permita personalizar nombres de jugadores y puntos objetivo dentro de un limite especifico, por ejemplo: (0-20000) (solo en estado 0, menu principal)
+
+
+
+### generar ejecutable:
+pyinstaller --onefile --windowed --icon=icon.ico --add-data "assets;assets" rana.py
