@@ -188,4 +188,4 @@ Implementar interfaz de teclado virtual que permita personalizar nombres de juga
 
 
 ### generar ejecutable:
-pyinstaller --onefile --windowed --icon=icon.ico --add-data "assets;assets" rana.py
+pyinstaller --onefile --windowed --icon=assets/images/icono.png --add-data "assets;assets" rana.py

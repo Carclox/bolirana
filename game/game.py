@@ -71,14 +71,25 @@ class ResourceManager:
         self.fonts = {}
         self.images = {}
         self.sounds = {}
+        self.icon = None
         self.animated_backgrounds = {}
         self._load_fonts()
         self._load_sounds()
+        self._load_icon()
 
+
+    def _load_icon(self):
+        try:
+            self.icon = pygame.image.load(resource_path(os.path.join('assets', 'images', 'icono.png')))
+        except Exception as e:
+            print(f"Error cargando icono: {e}")
+            self.icon = None
+
+        
+    
 
     def _load_fonts(self):
         try:
-            # USO DE resource_path AQUI
             self.fonts['large'] = pygame.font.Font(resource_path(os.path.join('assets', 'fonts', 'predataur.ttf')), 74)
             self.fonts['medium'] = pygame.font.Font(resource_path(os.path.join('assets', 'fonts', 'electromagnetic.otf')), 50)
             self.fonts['small'] = pygame.font.Font(resource_path(os.path.join('assets', 'fonts', 'electromagnetic.otf')), 36)
@@ -90,7 +101,6 @@ class ResourceManager:
 
     def _load_sounds(self):
         try:
-            # USO DE resource_path AQUI
             self.sounds['points'] = pygame.mixer.Sound(resource_path(os.path.join('assets', 'sounds', 'points.wav')))
             self.sounds['game_over'] = pygame.mixer.Sound(resource_path(os.path.join('assets', 'sounds', 'gameover.wav')))
             self.sounds['button'] = pygame.mixer.Sound(resource_path(os.path.join('assets', 'sounds', 'button.wav')))
@@ -101,14 +111,13 @@ class ResourceManager:
             self.sounds['button'] = self.sounds['fanfare'] = None
 
     def load_animated_background(self, state_name, screen_width, screen_height):
-        # USO DE resource_path AQUI
         path = resource_path(os.path.join('assets', state_name))
         images_list = []
         if state_name in self.animated_backgrounds:
             return self.animated_backgrounds[state_name]
 
         try:
-            # os.listdir requiere la ruta real, que ahora resource_path proporciona
+            # os.listdir requiere la ruta que resource_path proporciona
             files = sorted([f for f in os.listdir(path) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp'))])
 
             if not files:
@@ -117,7 +126,7 @@ class ResourceManager:
                 return []
 
             for filename in files:
-                img_path = resource_path(os.path.join('assets', state_name, filename)) # USO DE resource_path AQUI para cada imagen
+                img_path = resource_path(os.path.join('assets', state_name, filename))
                 image = pygame.image.load(img_path).convert_alpha()
                 image = pygame.transform.scale(image, (screen_width, screen_height))
                 images_list.append(image)
@@ -129,7 +138,6 @@ class ResourceManager:
             self.animated_backgrounds[state_name] = []
             return []
         except FileNotFoundError as e:
-            # Captura FileNotFoundError específicamente
             print(f"Advertencia: La carpeta de estado '{path}' no fue encontrada. Error: {e}")
             self.animated_backgrounds[state_name] = []
             return []
@@ -140,6 +148,9 @@ class ResourceManager:
 
     def get_sound(self, sound_name):
         return self.sounds.get(sound_name)
+    
+    def get_icon(self):
+        return self.icon
 
 
 # --- Módulo de Utilidades de Dibujo ---
@@ -502,13 +513,16 @@ class Game:
     def __init__(self):
         pygame.init()
         pygame.mixer.init()
+        self.resources = ResourceManager()
 
         self.screen = pygame.display.set_mode((Config.SCREEN_WIDTH, Config.SCREEN_HEIGHT))
         pygame.display.set_caption("Bolirrana")
+        pygame.display.set_icon(self.resources.get_icon())
+        
         self.clock = pygame.time.Clock()
         pygame.mouse.set_visible(False) # Oculta el cursor del ratón
 
-        self.resources = ResourceManager()
+   
 
         self.current_game_state = Config.STATE_MENU
         self.players = []
