@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="de462e5a-e685-48bd-8735-e7f7af4413ba" name="bolirana_project">
+        <fileTransfer rootFolder="/home/pi/bolirana" accessType="SFTP" host="192.168.1.12" port="22" sshConfigId="93531f12-29f2-47f7-9145-c5ed8dcf37ab" sshConfig="pi@192.168.1.12:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
