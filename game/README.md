@@ -1,117 +1,95 @@
-# Bolirrana Arcade Game
+# Bolirrana Arcade
 
-Juego Bolirana simple estilo arcade implemantado en pygame, diseñado para simular experiencia del juego tradicional colombiano
-'rana' o 'bolirana' a traves de entradas de teclado estandar.
+Simulador arcade de Bolirana implementado en Pygame, diseñado para replicar la experiencia del juego tradicional colombiano "rana" o "bolirana" a través de entradas de teclado estándar o personalizadas.
 
-Simple arcade style Bolirana game implemented in pygame, designed to simulate traditional Colombian game experience
-'rana' or 'bolirana' through standard keyboard inputs.
+An arcade-style Bolirana (Frog Game) simulator implemented in Pygame, designed to replicate the traditional Colombian game experience via standard or custom keyboard inputs.
 
 
-## Contenido
+# :rocket: Demo
 
--   [Descripcion](#descripcion)
--   [Features](#features)
--   [How to Play](#how-to-play)
--   [Installation](#installation)
--   [Game States](#game-states)
--   [Input Mapping](#input-mapping)
--   [Project Structure](#project-structure)
--   [Acknowledgements](#acknowledgements)
--   [To-Do / Improvements](#to-do--improvements)
+poner aca un gif del gameplay
 
-## Descripcion
+
+# :package:  Descripcion
 
 Este proyecto es una simulación basada en Pygame de una Bolirrana (Juego de la Rana), un juego arcade en el que los jugadores intentan conseguir puntos lanzando una esfera metalica hacia los objetivos. El juego cuenta con un diseño modular, separando las preocupaciones en la configuración, gestión de recursos, utilidades de dibujo, y los distintos estados del juego. Incluye la selección del jugador, la personalización del objetivo de puntuación, la jugabilidad, la funcionalidad de pausa y una pantalla de finalización de la partida. También se ha implementado un «modo de reposo» para reducir el consumo de energía.
 
 
 This project is a Pygame-based simulation of a Bolirrana (Frog Game), an arcade game where players aim to score points by hitting targets. The game features a modular design, separating concerns into configuration, resource management, drawing utilities, and distinct game states. It includes player selection, score target customization, gameplay, pause functionality, and a game over screen. A "sleep mode" is also implemented for low-power consumption.
 
-## Features
+# :star: Caracteristicas destacadas
 
-* **Configurable Game Options:** Easily adjust screen dimensions, FPS, colors, target scores, and number of players.
-* **Multiple Game States:**
-    * **Menu:** Navigate between game setup options or start a new game.
-    * **Select Players:** Choose the number of participants (2 to 6).
-    * **Select Score:** Set the winning score target (1000 to 5000 points).
-    * **Gameplay:** Active game session with score tracking and player turns.
-    * **Pause:** Temporarily halt the game with options to continue or exit.
-    * **Game Over:** Displays winners and final scores.
-    * **Sleep Mode:** A low-power state with reduced visual activity.
-* **Dynamic Player Management:** Supports multiple players with individual score tracking.
-* **Animated Backgrounds:** Each game state can have a unique animated background for a richer visual experience.
-* **Sound Effects and Music:** Includes sound effects for points, button presses, game over, and background music.
-* **Arcade Input Simulation:** Designed to work with arcade-like inputs (UP, DOWN, ENTER, TAB, and score sensors 1-8), simulated via keyboard keys for local development.
-* **System Power Control:** Toggle between active and low-power "sleep" modes.
-* **Graceful Exit:** Long-press 'S' to exit the application.
+* **Juego modular y extensible.** Arquitectura basada en maquina de estados (```menu```, ```gameplay```, ```pause```, ```gameover```, etc) para una gestion del juego clara y facil de mantener.
+* **Gestion de entradas personalizadas.** Diseñado para integrarse con hardware arcade, simulado a través de mapeo de teclado configurable para flexibilidad en el desarrollo y pruebas.
+* **Configuracion dinamica** Permite al usuario configurar el numero de jugadores y total de puntos objetivo, garantizando una experiencia mas personalizada.
 
-## How to Play
+* **Gestion de datos de juego.** Rastrea y gestiona puntajes para multiples jugadores, muestra en pantalla los puntajes actuales y nuevos de cada jugador.
 
-### Basic Controls (Keyboard Simulation)
 
-The game is designed for arcade inputs, but for local testing and development, the following keyboard keys are mapped:
 
-* **UP Arrow**: Navigate up in menus.
-* **DOWN Arrow**: Navigate down in menus.
-* **ENTER (Return)**: Select an option in menus, confirm selections.
-* **TAB**: In Gameplay, switch to the next player's turn.
-* **Number Keys (1-8)**: In Gameplay, simulate score sensor inputs.
-    * `1`: 500 points
-    * `2`: 300 points
-    * `3`: 200 points
-    * `4`: 150 points
-    * `5`: 100 points
-    * `6`: 50 points
-    * `7`: 30 points
-    * `8`: 15 points
-* **S Key**:
-    * **Short Press (while awake)**: Enter Sleep Mode.
-    * **Long Press (3 seconds)**: Exit the entire program.
-* **W Key**: Wake up from Sleep Mode.
+# :joystick: Como jugar
 
-### Gameplay Flow
+### Control basico (Keyboard Simulation)
 
-1.  **Main Menu:**
-    * Use **UP/DOWN** to select "Seleccionar jugadores" (Select Players), "Seleccionar puntaje" (Select Score), or "Jugar" (Play).
-    * Press **ENTER** to confirm your choice.
-2.  **Select Players / Select Score:**
-    * Use **UP/DOWN** to choose your desired number of players or target score.
-    * Press **ENTER** to return to the Main Menu.
-3.  **Start Game (Jugar):**
-    * The game begins with the selected number of players and target score.
-    * The current player's turn and score are displayed prominently.
-    * Press **TAB** to switch to the next player'.
-    * Press number keys **1-8** to add points to the current player's score.
-    * Press **ENTER** to pause the game.
-4.  **Pause Menu:**
-    * Use **UP/DOWN** to select "Continuar" (Continue) or "Salir" (Exit).
-    * Press **ENTER** to confirm. "Continue" resumes the game, "Exit" returns to the Main Menu.
-5.  **Game Over:**
-    * The screen displays the winners.
-    * Press **ENTER** to return to the Main Menu.
-6.  **Sleep Mode:**
-    * Press **S** (short press) to enter sleep mode. The screen will go dark, showing "Modo de Bajo Consumo...".
-    * Press **W** to wake up and return to the Main Menu.
+Juego diseñado para entradas GPIO, mapeadas a eventos de teclado estandar definidas de la siguiente manera:
 
-## Installation
+* **UP Arrow**: Navegar hacia arriba por el menu.
+* **DOWN Arrow**: Navegar hacia abajo en el menu.
+* **ENTER (select)**: Seleccionar y confirmar opciones del menu.
+* **TAB**: Durante el juego, cambiar al siguiente turno.
+* **Number Keys (1-8)**: Durante el juego, mapear entradas de sensores a teclas numericas.
+    * `1`: 500 puntos
+    * `2`: 300 puntos
+    * `3`: 200 puntos
+    * `4`: 150 puntos
+    * `5`: 100 puntos
+    * `6`: 50 puntos
+    * `7`: 30 puntos
+    * `8`: 15 puntos
 
-To run this game, you'll need Python 3 and Pygame.
 
-1.  **Clone the repository (or download `game.py`):**
+# :video_game: Flujo de juego
+
+1.  **Menu principal:**
+    * Use **UP/DOWN** Para navegar sobre las opciones: "Seleccionar jugadores", "Seleccionar puntaje", o "Jugar".
+    * Presione **ENTER / select** para confirmar.
+2.  **Seleccionar jugadores / Seleccionar puntaje:**
+    * Use **UP/DOWN** Para navegar sobre las distintas opciones de los sub menus.
+    * Presione **ENTER** para confirmar y regresar al menu principal.
+3.  **Start (Jugar):**
+    * El juego inicia con el numero de jugadores y puntos seleccionados.
+    * En pantalla se muestra el jugador actual y el puntaje total.
+    * Presione**TAB** para cambiar al siguiente jugador'.
+    * presione las teclas numericas **1-8** para anotar puntos y añadirlos al jugador actual.
+    * Presione **ENTER** para pausar el juego.
+    *  **Menu de pausa:**
+    * Use **UP/DOWN** para navegar y seleccionar las opciones "pausa" o "continuar".
+    * Presione **ENTER** para confirmar. "Continuar" vuelve al juego, "salir" retorna al menu principal.
+5.  **Juego terminado:**
+    * Se muestra en pantalla 2 ganadores (primeros 2 en completar el objetivo).
+    * Presione **ENTER** para regresar al menu principal.
+
+
+## Instalacion
+
+Para ejecutar este juego necsitas python 3 y la libreria pygame.
+
+1.  **Clonar el repositorio (o descargar `game.exe`):**
 
     ```bash
-    git clone <repository_url>
-    cd <repository_folder>
+    git clone https://github.com/Carclox/bolirana.git
+    cd <directorio-del-repositorio>
     ```
 
-2.  **Install Pygame:**
+2.  **Instalar pygame:**
 
     ```bash
     pip install pygame
     ```
 
-3.  **Create the `assets` directory and its subdirectories:**
+3.  **Directorio raiz y estructura:**
 
-    The game expects the following directory structure within your project folder:
+    Verificar que le directorio del juego coincida con lo siguiente, y que existan los respectivos archivos.
 
     ```
     .
@@ -127,7 +105,7 @@ To run this game, you'll need Python 3 and Pygame.
         │   ├── button.wav
         │   ├── fanfare.mp3
         │   └── gameplay_music.wav
-        ├── state_inicio/    # Images for MenuState background (e.g., frame001.png, frame002.png)
+        ├── state_inicio/    # Images for MenuState background (e.g.,       frame001.png, ... frame060.png)
         ├── state_jugadores/ # Images for SelectPlayersState background
         ├── state_puntos/    # Images for SelectScoreState background
         ├── state_play/      # Images for GameplayState background
@@ -136,7 +114,7 @@ To run this game, you'll need Python 3 and Pygame.
         └── state_sleep/     # Images for SleepState background (likely single image)
     ```
 
-    You will need to provide your own font, image, and sound files for the game to run with its intended visuals and audio. Placeholder files can be used for initial setup.
+
 
 4.  **Run the game:**
 
@@ -144,21 +122,11 @@ To run this game, you'll need Python 3 and Pygame.
     python game.py
     ```
 
-## Game States
 
-The game operates using a state machine pattern, with each state managing its own input, update logic, and drawing:
 
-* `Config.STATE_MENU` (0): `MenuState` - Main menu.
-* `Config.STATE_SELECT_PLAYERS` (1): `SelectPlayersState` - Player count selection.
-* `Config.STATE_SELECT_SCORE` (2): `SelectScoreState` - Target score selection.
-* `Config.STATE_GAMEPLAY` (3): `GameplayState` - The core game loop.
-* `Config.STATE_PAUSE` (4): `PauseState` - Game paused menu.
-* `Config.STATE_GAME_OVER` (5): `GameOverState` - End game screen showing winners.
-* `Config.STATE_SLEEP` (6): `SleepState` - Low-power display mode.
+# :space_invader: Mapeo de entradas:
 
-## Input Mapping
-
-The `Config.KEY_MAPPING` dictionary defines the standard keyboard keys used to simulate arcade inputs. This allows for easy testing and development without a physical arcade setup.
+`Config.KEY_MAPPING` es un diccionario que define las entradas de teclado estandar usadas para simular los eventos de entrada arcade, eventualmente se puede desarrollar una configuracion fisica arcade.
 
 ```python
     KEY_MAPPING = {
@@ -173,19 +141,17 @@ The `Config.KEY_MAPPING` dictionary defines the standard keyboard keys used to s
     }
 
 ```
-## Funcionalidades
 
-* Si la tecla 's' es presionada y el sistema esta abierto, se entra en modo de bajo consumo y la pantalla se pinta de negro.
-* Para salir del modo de bajo consumo basta con presionar cualquier tecla excepto la tecla s (para evitar conflictos con logica de salida).
-* Para cerrar el juego y salir a la terminal se presiona la tecla s durante 3 segundos. 
 
-## Mejoras futuras
-Durante el gameplay, si un jugador completa el objetivo de puntos, el programa omite seleccionar su turno,  y pasa inmediatamente
-al siguinete turno de jugador que no haya completado el objetivo.
+# Mejoras futuras
+**:memo: Inteligencia en turnos** optimizar el flujo de turnos durante el juego, para que salte automaticamente a los jugadores que no han completado el objetivo.
 
-Implementar interfaz de teclado virtual que permita personalizar nombres de jugadores y puntos objetivo dentro de un limite especifico, por ejemplo: (0-20000) (solo en estado 0, menu principal)
+**:memo: Teclado virtual** Implementar interfaz de teclado virtual que permita personalizar nombres de jugadores y puntos objetivo dentro de un limite especifico, por ejemplo: (0-20000), dentro del menu principal.
 
 
 
-### generar ejecutable:
+# **:slot_machine: generar ejecutable:**
+En caso de requerirlo, ejecute:
+```bash
 pyinstaller --onefile --windowed --icon=assets/images/icono.png --add-data "assets;assets" rana.py
+```
