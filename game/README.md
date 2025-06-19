@@ -4,10 +4,10 @@ Simulador arcade de Bolirana implementado en Pygame, diseñado para replicar la 
 
 An arcade-style Bolirana (Frog Game) simulator implemented in Pygame, designed to replicate the traditional Colombian game experience via standard or custom keyboard inputs.
 
+# :video_game: Demo
+![Vista previa:](https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjFmdWF5a3lpbGw5d3Qyanc0aTV3cTd1YzhndHFrZGd0MzNlcHRhcCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/50pw4rhiug0Fm2y5DS/giphy.gif)
 
-# :rocket: Demo
 
-poner aca un gif del gameplay
 
 
 # :package:  Descripcion
