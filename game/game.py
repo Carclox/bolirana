@@ -173,7 +173,7 @@ class GameState:
         self.background_frames = []
         self.current_frame_index = 0
         self.last_frame_time = 0
-        self.animation_speed_ms = 33 # Aproximadamente 30 FPS para la animación
+        self.animation_speed_ms = 33 #30 FPS para la animación
         self.animation_finished = False
 
     def enter_state(self):
