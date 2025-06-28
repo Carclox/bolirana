@@ -9,7 +9,8 @@ OBJ_DIR := obj
 BIN_DIR := bin # Si quieres una carpeta para el .ko final, como el ejemplo anterior
 
 # Directorio de los headers del kernel
-KDIR := /lib/modules/$(shell uname -r)/build
+KDIR := /usr/src/linux-headers-$(shell uname -r)
+#KDIR := /lib/modules/linux-headers-$(shell uname -r)/build
 
 # Regla 'all' para compilar el módulo
 all: $(OBJ_DIR) $(BIN_DIR) # Asegúrate de que los directorios existan

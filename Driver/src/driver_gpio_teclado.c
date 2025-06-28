@@ -2,7 +2,7 @@
 Dispositivo : Driver GPIO Teclado estandar
 Autor :  Carlos Daniel Silva
 Fecha :  2023-10-05
-Descripcion :  Controlador para la lectura de un teclado matricial utilizando GPIO
+Descripcion :  Controlador para la lectura de un teclado utilizando GPIO
 */
 
 #include <linux/module.h>
@@ -31,7 +31,7 @@ struct gpio_button {
     unsigned int keycode;   // codigo evdev asociado al boton
     char name[32];          // nombre del boton
     unsigned long last_jiffies; // Para el control de antirebote (debounce)
-    struct gpio_desc *desc; // Descriptor del GPIO para la API moderna
+    struct gpio_desc *desc; // Descriptor del GPIO para la API
 };
 
 // Declaración de prototipo para la función auxiliar de liberación de recursos
@@ -90,6 +90,8 @@ static irqreturn_t gpio_isr(int irq, void *data){
     input_report_key(custom_input_dev, button->keycode, value);
     input_sync(custom_input_dev);
 
+
+    // pr_info es una funcion que ya tiene concatenado el nivel de registro KERN_INFO, por lo que funciona igual que printk()
     pr_info("%s: Button %s (GPIO %d, IRQ %d, keycode %d)\n",
         KBUILD_MODNAME, value ? "pressed" : "released", // Si `value` es 1 (HIGH), está presionado
         button->gpio, button->irq, button->keycode);
@@ -114,6 +116,8 @@ static int __init custom_gpio_driver_init(void){
         pr_err("%s: no se pudo asignar el dispositivo de entrada\n", KBUILD_MODNAME);
         return -ENOMEM;
     }
+
+    // CUSTOM porque es personalizado
     custom_input_dev->name = "custom_gpio_keyboard";
     custom_input_dev->id.bustype = BUS_VIRTUAL;
     custom_input_dev->id.vendor = 0xAAAA;

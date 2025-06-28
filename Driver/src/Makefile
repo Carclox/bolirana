@@ -4,7 +4,8 @@
 MODULE_NAME ?= driver_gpio_teclado
 
 # Directorio de los headers del kernel (pasado desde el Makefile superior)
-KDIR ?= /lib/modules/$(shell uname -r)/build
+#KDIR ?= /lib/modules/$(shell uname -r)/build
+KDIR ?= /usr/src/linux-headers-$(shell uname -r)
 # PWD aquí será el directorio actual (Driver/src/)
 PWD := $(shell pwd)
 
