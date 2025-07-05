@@ -22,7 +22,7 @@ Descripcion :   Controlador para la lectura de un teclado utilizando GPIO
 #define DEBOUNCE_DELAY_JIFFIES msecs_to_jiffies(50) // 50 ms de antirebote
 
 // Mantener el OFFSET de 512, ya que se ha confirmado su relevancia en tu sistema.
-#define OFFSET 512 
+//#define OFFSET 512 
 
 //=====================================================
 // Estructura para almacenar la informacion de cada tecla
@@ -46,19 +46,19 @@ static void gpio_free_button_desc(struct gpio_button *button);
 //=====================================================
 
 static struct gpio_button gpio_buttons[] = {
-    { .gpio = 4 + OFFSET, .keycode = KEY_UP, .name = "UP"},
-    { .gpio = 23 + OFFSET, .keycode = KEY_DOWN, .name = "DOWN"},
-    { .gpio = 24 + OFFSET, .keycode = KEY_TAB, .name = "TAB"},
-    { .gpio = 25 + OFFSET, .keycode = KEY_ENTER, .name = "ENTER"},
-    { .gpio = 8  + OFFSET, .keycode = KEY_S, .name = "S"},
-    { .gpio = 7  + OFFSET, .keycode = KEY_1, .name = "NUM_1"},
-    { .gpio = 1  + OFFSET, .keycode = KEY_2, .name = "NUM_2"},
-    { .gpio = 12 + OFFSET, .keycode = KEY_3, .name = "NUM_3"},
-    { .gpio = 16 + OFFSET, .keycode = KEY_4, .name = "NUM_4"},
-    { .gpio = 20 + OFFSET, .keycode = KEY_5, .name = "NUM_5"},
-    { .gpio = 21 + OFFSET, .keycode = KEY_6, .name = "NUM_6"},
-    { .gpio = 26 + OFFSET, .keycode = KEY_7, .name = "NUM_7"},
-    { .gpio = 19 + OFFSET, .keycode = KEY_8, .name = "NUM_8"},
+    { .gpio = 4 ,.keycode = KEY_UP, .name = "UP"},
+    { .gpio = 23, .keycode = KEY_DOWN, .name = "DOWN"},
+    { .gpio = 24, .keycode = KEY_TAB, .name = "TAB"},
+    { .gpio = 25, .keycode = KEY_ENTER, .name = "ENTER"},
+    { .gpio = 8 , .keycode = KEY_S, .name = "S"},
+    { .gpio = 7 , .keycode = KEY_1, .name = "NUM_1"},
+    { .gpio = 1 , .keycode = KEY_2, .name = "NUM_2"},
+    { .gpio = 12, .keycode = KEY_3, .name = "NUM_3"},
+    { .gpio = 16, .keycode = KEY_4, .name = "NUM_4"},
+    { .gpio = 20, .keycode = KEY_5, .name = "NUM_5"},
+    { .gpio = 21, .keycode = KEY_6, .name = "NUM_6"},
+    { .gpio = 26, .keycode = KEY_7, .name = "NUM_7"},
+    { .gpio = 19, .keycode = KEY_8, .name = "NUM_8"},
 };
 
 
