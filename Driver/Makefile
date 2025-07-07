@@ -31,7 +31,7 @@ all: $(OBJ_DIR) $(BIN_DIR)
         mv $(SRC_DIR)/$$module_name.o "$(OBJ_DIR)/$$module_name/" 2>/dev/null || true; \
         mv $(SRC_DIR)/$$module_name.mod.c "$(OBJ_DIR)/$$module_name/" 2>/dev/null || true; \
         mv $(SRC_DIR)/$$module_name.mod "$(OBJ_DIR)/$$module_name/" 2>/dev/null || true; \
-        mv $(SRC_DIR)/$(MODULE_NAME)*.cmd "$(OBJ_DIR)/$$module_name/" 2>/dev/null || true; \
+        mv $(SRC_DIR)/$$module_name*.cmd "$(OBJ_DIR)/$$module_name/" 2>/dev/null || true; \
         mv $(SRC_DIR)/Module.symvers "$(OBJ_DIR)/$$module_name/" 2>/dev/null || true; \
         mv $(SRC_DIR)/modules.order "$(OBJ_DIR)/$$module_name/" 2>/dev/null || true; \
     done
