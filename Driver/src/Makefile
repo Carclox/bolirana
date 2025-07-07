@@ -1,7 +1,7 @@
 # Makefile en Driver/src/
 
 # Nombre del módulo de kernel (pasado desde el Makefile superior)
-MODULE_NAME ?= driver_gpio_teclado
+module_name ?= driver_gpio_teclado
 # Valor por defecto si se llama directamente
 
 # Directorio de los headers del kernel

@@ -1,7 +1,7 @@
 # Makefile en Driver/
 
 # Nombres de los módulos de kernel
-MODULE_NAMES := driver_gpio_teclado driver_gpio_teclado_polling
+module_names := driver_gpio_teclado driver_gpio_teclado_polling
 
 # Rutas relativas desde Driver/
 SRC_DIR := src
@@ -14,7 +14,7 @@ KDIR := /usr/src/linux-headers-$(shell uname -r)
 # Regla 'all' para compilar todos los módulos
 all: $(OBJ_DIR) $(BIN_DIR)
 	@echo "--- Compilando los módulos del kernel desde Driver/ ---"
-	@for module_name in $(MODULE_NAMES); do \
+	@for module_name in $$module_names; do \
         echo "Compilando $$module_name..."; \
         $(MAKE) -C $(SRC_DIR) KDIR=$(KDIR) MODULE_NAME=$$module_name; \
         \
@@ -50,7 +50,7 @@ $(BIN_DIR):
 # Regla para limpiar los archivos de compilación
 clean:
 	@echo "--- Limpiando archivos de compilación desde Driver/ ---"
-	@for module_name in $(MODULE_NAMES); do \
+	@for module_name in $$module_names; do \
         echo "Limpiando $$module_name..."; \
         $(MAKE) -C $(SRC_DIR) clean MODULE_NAME=$$module_name; \
     done
@@ -62,7 +62,7 @@ clean:
 
     # Además, elimina cualquier archivo .ko que pueda haber quedado en Driver/ (si no se movió bien)
 	@echo "Eliminando cualquier .ko residual en el directorio actual."
-	rm -f $(MODULE_NAMES:=.ko)
+	rm -f $(module_names:=.ko)
 
 	@echo "--- Limpieza completa en Driver/ ---"
 
