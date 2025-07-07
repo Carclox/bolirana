@@ -3,16 +3,32 @@ import sys
 import os
 
 # --- Función para manejar rutas de recursos en PyInstaller ---
+"""
 def resource_path(relative_path):
-    """
-    Obtiene la ruta absoluta a un recurso, funciona tanto en desarrollo como en PyInstaller.
-    PyInstaller crea una carpeta temporal y almacena su ruta en _MEIPASS.
-    Esto se hace con objetivo de crar un archivo ejecutable en caso de que se requiera.
-    """
+    
+    #Obtiene la ruta absoluta a un recurso, funciona tanto en desarrollo como en PyInstaller.
+    #PyInstaller crea una carpeta temporal y almacena su ruta en _MEIPASS.
+    #Esto se hace con objetivo de crar un archivo ejecutable en caso de que se requiera.
+    
     try:
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
+    return os.path.join(base_ppython.exeath, relative_path)
+"""
+def resource_path(relative_path):
+    """
+    Obtiene la ruta absoluta a un recurso, funciona tanto en desarrollo como en PyInstaller.
+    PyInstaller crea una carpeta temporal y almacena su ruta en _MEIPASS.
+    Esto se hace con objetivo de crear un archivo ejecutable en caso de que se requiera.
+    """
+    try:
+        # Intenta obtener la ruta base de PyInstaller
+        base_path = sys._MEIPASS
+    except AttributeError:
+        # Si no se está ejecutando desde PyInstaller, usa la ruta actual del script
+        base_path = os.path.abspath(".")
+    # Une la ruta base con la ruta relativa del recurso
     return os.path.join(base_path, relative_path)
 
 # --- Módulo de Constantes y Configuraciones ---
