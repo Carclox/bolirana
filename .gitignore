@@ -1,0 +1,45 @@
+# Directorios de Python
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+.Python/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# Archivos del IDE (CLion, VS Code, etc.)
+.idea/
+.vscode/
+*.iml
+
+# Archivos de logs
+*.log
+log/
+logs/
+
+# Archivos de configuración local (ej. API keys, credenciales)
+*.env
+.env.local
+config.ini
+settings.json
+*.conf
+
+# Archivos temporales del sistema operativo
+.DS_Store # macOS
+Thumbs.db # Windows
+ehthumbs.db # Windows
+Desktop.ini # Windows
+
+# Archivos de respaldo de editores (ej. vim, nano)
+*~
+*.bak
+*.swp
+.c9/
+
+# Archivos de PyInstaller (tus ejecutables y temporales)
+build/
+dist/
+*.spec
