@@ -1,30 +1,26 @@
-# Makefile en Driver/src/
+# Variables pasadas desde el Makefile principal
+MODULE_NAME ?= driver_gpio_teclado
+KERNEL_DIR  ?= /lib/modules/$(shell uname -r)/build
+OBJ_DIR     ?= ../obj
+BIN_DIR     ?= ../bin
 
-# Nombre del módulo de kernel (pasado desde el Makefile superior)
-module_name ?= driver_gpio_teclado
-# Valor por defecto si se llama directamente
+# Archivos fuente del módulo
+obj-m += $(MODULE_NAME).o
 
-# Directorio de los headers del kernel
-KDIR ?= /usr/src/linux-headers-$(shell uname -r)
-PWD := $(shell pwd)
+$(MODULE_NAME)-objs := $(OBJ_DIR)/driver_gpio_teclado.o
 
-# Configuración para el Kbuild del kernel
-# obj-m le dice al Kbuild qué módulo (.ko) construir.
-obj-m := $$module_name.o
+# Reglas de compilación para el módulo del kernel
+all: $(MODULE_NAME).ko
 
-# Si el módulo principal depende de otros archivos .c en src/, se listarían aquí:
-# Por ejemplo:
-# $$module_name-objs := $$module_name.o otro_archivo_asociado.o
+$(MODULE_NAME).ko: $(OBJ_DIR)/driver_gpio_teclado.o
+	$(MAKE) -C $(KERNEL_DIR) M=$(PWD) modules
 
-all:
-	@echo "Compilando el módulo '$$module_name' desde Driver/src/..."
-	$(MAKE) -C $(KDIR) M=$(PWD) modules
+$(OBJ_DIR)/driver_gpio_teclado.o: driver_gpio_teclado.c
+	@mkdir -p $(OBJ_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	@echo "Limpiando archivos de compilación para '$$module_name' desde Driver/src/..."
-	$(MAKE) -C $(KDIR) M=$(PWD) clean
-	# Asegúrate de limpiar solo los archivos generados por kbuild para este módulo específico
-	rm -f $$module_name.o $$module_name.ko $$module_name.mod.c $$module_name.mod *.cmd Module.symvers modules.order
-	@echo "Limpieza de Driver/src/ para '$$module_name' completada."
-
-.PHONY: all clean
+	@echo "Limpiando en src..."
+	@rm -f *.o *.ko *.mod.c .*.cmd *.symvers modules.order
+	@rm -rf .tmp_versions
+	@echo "Limpieza de src completa."

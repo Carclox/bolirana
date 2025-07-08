@@ -1,18 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" serverName="bolirana_project" remoteFilesAllowedToDisappearOnAutoupload="false" showNewOnTargetInSync="false">
+  <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false" showNewOnTargetInSync="false">
     <serverData>
-      <paths name="bolirana_project">
+      <paths name="rpi_zero_2w (9bc73c14-0690-46b6-870d-d8728e6d5990)">
         <serverdata>
           <mappings>
             <mapping deploy="/" local="$PROJECT_DIR$" web="/" />
-          </mappings>
-        </serverdata>
-      </paths>
-      <paths name="rpi_led (d65dbb7c-fe36-40d5-b237-20982144db81)">
-        <serverdata>
-          <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>

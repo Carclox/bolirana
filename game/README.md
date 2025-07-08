@@ -151,7 +151,11 @@ Para ejecutar este juego necsitas python 3 y la libreria pygame.
 
 
 # **:slot_machine: generar ejecutable:**
-En caso de requerirlo, ejecute:
+En caso de requerirlo, para Windows ejecute:
 ```bash
-pyinstaller --onefile --windowed --icon=assets/images/icono.png --add-data "assets;assets" rana.py
+pyinstaller --onefile --windowed --icon=assets/images/icono.png --add-data="assets;assets" rana.py
+```
+Para Linux:
+```bash
+    pyinstaller --onefile --windowed --icon=assets/images/icono.png --add-data="assets:assets" rana.py
 ```
