@@ -16,6 +16,15 @@ Descripcion :   Controlador para la lectura de un teclado utilizando GPIO
 #include <linux/delay.h>
 
 //=====================================================
+// Metadatos del modulo
+//=====================================================
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Carlos Daniel Silva");
+MODULE_DESCRIPTION("GPIO Keyboard Driver");
+MODULE_ALIAS("platform:rpi-Keyboard-ctrl");
+MODULE_VERSION("0.01");
+
+//=====================================================
 //Definicion de tiempo de antirebote
 //=====================================================
 
@@ -270,11 +279,3 @@ static void __exit custom_gpio_driver_exit(void){
 module_init(custom_gpio_driver_init);
 module_exit(custom_gpio_driver_exit);
 
-//=====================================================
-// Metadatos del modulo
-//=====================================================
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Carlos Daniel Silva");
-MODULE_DESCRIPTION("GPIO Keyboard Driver");
-MODULE_ALIAS("platform:rpi-Keyboard-ctrl");
-MODULE_VERSION("0.01");
