@@ -122,7 +122,7 @@ class ResourceManager:
             points_path = resource_path(os.path.join('assets', 'sounds', 'points.wav'))
             game_over_path = resource_path(os.path.join('assets', 'sounds', 'gameover.wav'))
             button_path = resource_path(os.path.join('assets', 'sounds', 'button.wav'))
-            fanfare_path = resource_path(os.path.join('assets', 'sounds', 'fanfare.mp3'))
+            fanfare_path = resource_path(os.path.join('assets', 'sounds', 'fanfare.wav'))
             background_music_path = resource_path(os.path.join('assets', 'sounds', 'background.ogg'))
 
             self.sounds['points'] = pygame.mixer.Sound(points_path)
