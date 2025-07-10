@@ -10,7 +10,6 @@ Restart=on-failure
 RestartSec=5s
 StandardOutput=journal
 StandardError=journal
-User=root  ; Se ejecuta como root para acceder a /dev/input/
-
+User=root
 [Install]
 WantedBy=multiuser.target

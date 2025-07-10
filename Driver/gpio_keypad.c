@@ -123,7 +123,7 @@ static void __exit gpio_keyboard_exit(void)
 module_init(gpio_keyboard_init);
 module_exit(gpio_keyboard_exit);
 
-MODULE_AUTHOR("Carlos + ChatGPT");
-MODULE_DESCRIPTION("Driver GPIO como teclado con 13 teclas");
+MODULE_AUTHOR("Carlos, Gepeto y un repositorio ya olvidado");
+MODULE_DESCRIPTION("Driver GPIO teclado estandar");
 MODULE_LICENSE("GPL");
 MODULE_VERSION("0.2");

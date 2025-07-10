@@ -1,13 +1,13 @@
 [Unit]
 Description=Servicio de juego Arcade para Bolirana
 After=keyboard_monitor.service
-After=display-manager.service  # Si usas un display manager como LightDM, GDM, etc.
+After=display-manager.service
 After=multiuser.target
-Wants=keyboard_monitor.service # Queremos que keyboard_monitor esté activo.
+Wants=keyboard_monitor.service
 
 [Service]
-ExecStart=/usr/bin/python3 /home/pi/bolirana/game/game.py
-WorkingDirectory=/home/pi/bolirana/game
+ExecStart=/usr/bin/python3 /home/pi/Public/bolirana/game/game.py
+WorkingDirectory=/home/pi/Public/bolirana/game
 User=pi
 Environment=DISPLAY=:0
 Restart=on-failure
