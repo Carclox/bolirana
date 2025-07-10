@@ -3,30 +3,12 @@ import sys
 import os
 
 # --- Función para manejar rutas de recursos en PyInstaller ---
-"""
-def resource_path(relative_path):
-    
-    Obtiene la ruta absoluta a un recurso, funciona tanto en desarrollo como en PyInstaller.
-    PyInstaller crea una carpeta temporal y almacena su ruta en _MEIPASS.
-    Esto se hace con objetivo de crear un archivo ejecutable en caso de que se requiera.
-    
-    try:
-        # Intenta obtener la ruta base de PyInstaller
-        base_path = sys._MEIPASS
-    except AttributeError:
-        # Si no se está ejecutando desde PyInstaller, usa la ruta actual del script
-        base_path = os.path.abspath(".")
-    # Une la ruta base con la ruta relativa del recurso
-    return os.path.join(base_path, relative_path)
-"""
-
 
 def resource_path(relative_path):
     """
     Obtiene la ruta absoluta a un recurso, compatible con PyInstaller y ejecución normal.
     """
     try:
-        # PyInstaller
         base_path = sys._MEIPASS
     except AttributeError:
         # Directorio donde está este script
@@ -91,7 +73,7 @@ class ResourceManager:
         self.sounds = {}
         self.icon = None
         self.animated_backgrounds = {}
-        # Almacenaremos las rutas de los sonidos para pygame.mixer.music
+        # Almacenar las rutas de los sonidos para pygame.mixer.music porque por alguna razon asi normal no estaba funcionando
         self._sound_paths = {} 
         self._load_fonts()
         self._load_sounds()
@@ -130,6 +112,7 @@ class ResourceManager:
             self.sounds['button'] = pygame.mixer.Sound(button_path)
             self.sounds['fanfare'] = pygame.mixer.Sound(fanfare_path)
             # Aunque no se usa el objeto Sound directamente para pygame.mixer.music.load, lo mantenemos por si acaso.
+            # Esto toco hacerlo asi porque esa vaina no queria funcionar
             self.sounds['background'] = pygame.mixer.Sound(background_music_path)
 
             # Almacenar las rutas para el mixer.music.load()
@@ -208,7 +191,7 @@ class GameState:
         self.background_frames = []
         self.current_frame_index = 0
         self.last_frame_time = 0
-        self.animation_speed_ms = 33 #30 FPS para la animación
+        self.animation_speed_ms = 30 #30 FPS para la animación
         self.animation_finished = False
 
     def enter_state(self):
@@ -289,8 +272,7 @@ class SelectPlayersState(GameState):
         self.current_frame_index = 0
         self.last_frame_time = pygame.time.get_ticks()
         self.animation_finished = False
-        # La música de fondo ya está cargada y reproduciéndose desde MenuState o se iniciará si no lo estaba.
-        # No se necesita cargarla de nuevo aquí.
+
 
     def handle_input(self, key_name):
         if key_name == "UP":
@@ -326,8 +308,6 @@ class SelectScoreState(GameState):
         self.current_frame_index = 0
         self.last_frame_time = pygame.time.get_ticks()
         self.animation_finished = False
-        # La música de fondo ya está cargada y reproduciéndose desde MenuState o se iniciará si no lo estaba.
-        # No se necesita cargarla de nuevo aquí.
 
     def handle_input(self, key_name):
         if key_name == "UP":
@@ -477,7 +457,7 @@ class PauseState(GameState):
             elif self.selection_index == 1:
                 self.game.set_state(Config.STATE_MENU)
                 self.game.reset_game_state_variables()
-                pygame.mixer.music.stop() # Detener la música al salir de la partida
+                pygame.mixer.music.stop() # Detener la música al salir de la partida ||| revisar que pasa si se comenta esta linea
                 print("Juego: Saliendo de la partida.")
 
     def draw(self, screen):
@@ -560,7 +540,7 @@ class Game:
         self.winners = []
         self.s_key_pressed_time = 0
 
-        # --- MODIFICACIÓN: Cargar la música de fondo UNA SOLA VEZ al inicio ---
+        #  Cargar la música de fondo UNA SOLA VEZ al inicio, porque cargarla en cada estado se estaba llevando la memoria---
         self.game_music_loaded = False
         background_music_path = self.resources.get_sound_path('background')
         if background_music_path:
@@ -585,9 +565,6 @@ class Game:
         self.current_state_handler.enter_state()
 
     def set_state(self, new_state):
-        # --- MODIFICACIÓN: Se elimina el stop() general aquí. ---
-        # Ahora cada estado es responsable de controlar pygame.mixer.music
-        # (play, pause, unpause, stop) según su lógica.
         self.current_game_state = new_state
         self.current_state_handler = self.states[new_state]
         self.current_state_handler.enter_state()
@@ -648,8 +625,8 @@ class Game:
         pygame.quit()
         sys.exit()
 
-# --- Punto de Entrada Principal ---
+# --- Funcion Principal ---
 if __name__ == "__main__":
-    DrawingUtils = DrawingUtils() # Asegúrate de que DrawingUtils esté definida o importada correctamente
+    DrawingUtils = DrawingUtils()
     game = Game()
     game.run()
