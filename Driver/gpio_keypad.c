@@ -106,7 +106,7 @@ static int __init gpio_keyboard_init(void)
         return ret;
     }
 
-    for (i = 0; i <= NUM_KEYS; i++) {
+    for (i = 0; i < NUM_KEYS; i++) {
         ret = gpio_request(key_map[i].gpio, key_map[i].name);
         if (ret) {
             printk(KERN_ERR "gpio_request fallo para GPIO %d\n", key_map[i].gpio);
