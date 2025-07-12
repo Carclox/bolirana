@@ -8,12 +8,15 @@ import os
 # Obtener el directorio del script actual
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Construir la ruta hacia 'game.py' de forma portable
+# Construir la ruta hacia 'game.pygit add .
+# ' de forma portable
 script_path = os.path.join(base_dir, 'game.py')
 
 # Configuración de salida del gráfico
 graphviz = GraphvizOutput()
 graphviz.output_file = 'game_call_graph.png'
+#graphviz.output_file = 'game_call_graph.svg'
+
 
 # Ejecutar el script y capturar el gráfico de llamadas
 with PyCallGraph(output=graphviz):
