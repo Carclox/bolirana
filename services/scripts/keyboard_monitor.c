@@ -24,7 +24,7 @@
 //    Selecciona tu teclado de la lista, presiona la tecla 's' y observa el 'code'.
 //    Normalmente es 47, pero es bueno confirmarlo.
 // =================================================================================
-#define KEYBOARD_DEVICE "/dev/input/event0" // <--- ¡AJUSTA ESTO CON EL VALOR REAL DE TU RASPBERRY PI!
+#define KEYBOARD_DEVICE "/dev/input/input0" // <--- ajustar este valor con el mombre del dispositivo creado
 #define KEY_S_CODE 47                       // Código de tecla para 's'.
 
 // Variable global para controlar la ejecución del bucle principal
