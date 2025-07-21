@@ -5,7 +5,7 @@ After=driver_init.service
 After=multiuser.target
 
 [Service]
-ExecStart=/usr/local/bin/keyboard_monitor
+ExecStart=/home/pi/Public/bolirana/services/scrippts/keyboard_monitor.c
 Restart=on-failure
 RestartSec=5s
 StandardOutput=journal

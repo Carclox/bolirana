@@ -4,7 +4,7 @@ After=multiuser.target
 
 [Service]
 Type=oneshot
-ExecStart=/sbin/insmod /usr/local/bin/driver_gpio_teclado.ko
+ExecStart=/sbin/insmod /home/pi/Public/bolirana/Driver/bin/gpio_keypad.ko
 RemainAfterExit=yes
 
 [Install]
