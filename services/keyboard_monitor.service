@@ -2,14 +2,15 @@
 Description=Servicio para monitorear el teclado GPIO personalizado
 Requires=driver_init.service
 After=driver_init.service
-After=multiuser.target
+After=multi-user.target
 
 [Service]
-ExecStart=/home/pi/Public/bolirana/services/scrippts/keyboard_monitor.c
+ExecStart=/home/pi/Public/bolirana/services/scrippts/keyboard_monitor
 Restart=on-failure
 RestartSec=5s
 StandardOutput=journal
 StandardError=journal
 User=root
+
 [Install]
-WantedBy=multiuser.target
+WantedBy=multi-user.target
