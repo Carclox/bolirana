@@ -1,4 +1,4 @@
-# Bolirrana Arcade
+# Bolirana Arcade
 
 Simulador arcade de Bolirana implementado en Pygame, diseñado para replicar la experiencia del juego tradicional colombiano "rana" o "bolirana" a través de entradas de teclado estándar o personalizadas.
 
@@ -6,9 +6,6 @@ An arcade-style Bolirana (Frog Game) simulator implemented in Pygame, designed t
 
 # :video_game: Demo
 ![Vista previa:](https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjFmdWF5a3lpbGw5d3Qyanc0aTV3cTd1YzhndHFrZGd0MzNlcHRhcCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/50pw4rhiug0Fm2y5DS/giphy.gif)
-
-
-
 
 # :package:  Descripcion
 
@@ -72,7 +69,7 @@ Juego diseñado para entradas GPIO, mapeadas a eventos de teclado estandar defin
 
 ## Instalacion
 
-Para ejecutar este juego necsitas python 3 y la libreria pygame.
+Para ejecutar este juego necesitas python 3 y la libreria pygame.
 
 1.  **Clonar el repositorio (o descargar `game.exe`):**
 

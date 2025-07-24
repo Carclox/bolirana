@@ -11,3 +11,8 @@ El proyecto se enfoca en el diseño e implementación de un controlador de hardw
 
 - Apagado completo si se mantiene presionado durante 3 segundos.
 - Modo de bajo consumo (si el sistema está encendido) y hay pulsación corta.
+
+La pantalla y el sonido se gestionan por la salida HDMI de la tarjeta. 
+Se asume que el hardware siempre estará conectado y el controlador debe iniciarse automáticamente al encender el sistema.
+
+El sistema enciende y llega hasta multiuser.target para no cargar el entorno gráfico completo, de modo que solo se ejecute la ventana gráfica del juego mediante xorg. (esto se hace con el fin de optimizar recursos y tener un arranque más rápido)
