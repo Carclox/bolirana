@@ -17,14 +17,14 @@ utiliza: ```make all``` para compilar el driver, ```make clean``` para limpiar a
 
 
 **Cargar el modulo**
-Una vez hayas generado el archivo ```driver_gpio_teclado.ko``` ejecuta en bash desde la carpeta raiz del driver:
+Una vez hayas generado el archivo ```gpio_teclado.ko``` ejecuta en bash desde la carpeta raiz del driver:
 ```bash
-sudo insmod obj/driver_gpio_teclado.ko
+sudo insmod obj/gpio_keypad.ko
 ```
 ***Descargar el modulo***
 Desde la carpeta raiz del driver ejecuta:
 ```bash
-sudo rmmod driver_gpio_teclado
+sudo rmmod gpio_keypad
 ```
 
 ***probar modulo***
