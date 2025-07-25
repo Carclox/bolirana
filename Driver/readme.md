@@ -1,6 +1,6 @@
 # gpio_keypad
 
-Este proyecto implementa un módulo del kernel de Linux que actúa como controlador de teclado utilizando pines GPIO. Está diseñado para plataformas embebidas como Raspberry Pi, y permite detectar la pulsación de teclas conectadas físicamente mediante interrupciones y lógica de antirebote por software.
+Este archivo implementa un módulo del kernel de Linux que actúa como controlador de teclado utilizando pines GPIO. Está diseñado para plataformas embebidas como Raspberry Pi, y permite detectar la pulsación de teclas conectadas físicamente mediante interrupciones y lógica de antirebote por software.
 
 ---
 
