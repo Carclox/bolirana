@@ -1,51 +1,65 @@
-Este código C implementa un módulo del kernel de Linux que actúa como controlador para un teclado matricial conectado mediante pines de Entrada/Salida de Propósito General (GPIO), el cual traduce las pulsaciones de las teclas físicas del teclado en eventos de entrada estándar que el kernel de Linux puede comprender, imitando así un teclado convencional.
+# gpio_keypad
 
-## requerimientos
-**Headers**
-Es necesario tener instalados en la tarjeta los headers del nucleo para que la compilacion funcione.
-```bash
-sudo apt update
-sudo apt install raspberrypi-kernel-headers
-```
-**Compilar el modulo**
-Navega hasta el directorio raiz del driver, donde esta ubucado el archivo makefile y ejecuta:
-```bash
-make
-```
+Este proyecto implementa un módulo del kernel de Linux que actúa como controlador de teclado utilizando pines GPIO. Está diseñado para plataformas embebidas como Raspberry Pi, y permite detectar la pulsación de teclas conectadas físicamente mediante interrupciones y lógica de antirebote por software.
 
-utiliza: ```make all``` para compilar el driver, ```make clean``` para limpiar archivos de compilacion anteriores
+---
 
+## Descripción general
 
-**Cargar el modulo**
-Una vez hayas generado el archivo ```gpio_teclado.ko``` ejecuta en bash desde la carpeta raiz del driver:
-```bash
-sudo insmod obj/gpio_keypad.ko
-```
-***Descargar el modulo***
-Desde la carpeta raiz del driver ejecuta:
-```bash
-sudo rmmod gpio_keypad
-```
+El módulo permite mapear 13 pines GPIO a códigos de tecla definidos en el sistema (por ejemplo, `KEY_1`, `KEY_ENTER`, etc.). Al detectar un flanco de subida en alguno de estos pines, se genera un evento de entrada que puede ser interpretado por el sistema operativo como una pulsación real de teclado. Para evitar rebotes eléctricos (falsos positivos), el controlador incorpora un mecanismo de antirebote utilizando `jiffies`.
 
-***probar modulo***
-```bash
-sudo evtest
-```
-esto mostrara eventos de presion y liberacion de teclado estandar cuando presiones un  boton.
+---
 
-***Buscar el dispositivo***
-```bash
-cat /proc/bus/input/devices | grep -A5 "custom_gpio_keyboard"
-```
+## Características principales
 
-# Descripcion del Modulo
-- **gpio_button:** Esta estructura define las propiedades de cada botón individual del teclado.
-- **gpio:** El número de pin GPIO de Broadcom (BCM) al que está conectado el botón.
-- **irq:** El número de solicitud de interrupción (IRQ) asociado con el pin GPIO, utilizado para el manejo asincrónico de eventos.
-- **keycode:** El código de tecla del subsistema de entrada de Linux (por ejemplo, KEY_UP, KEY_ENTER) que este botón informará cuando se presione.
-- **name:** Un nombre descriptivo para el botón.
-- **last_jiffies:** Se utiliza para eliminar rebotes , almacenando los jiffies del sistema (una medida de tiempo) cuando ocurrió el último evento de botón para evitar lecturas múltiples de una sola pulsación.
-- **desc:** Un puntero a un gpio_descobjeto, que es parte de la API de consumidor GPIO moderna en el kernel de Linux para administrar GPIO.
-**gpio_buttons:** Una matriz de gpio_buttonestructuras que define todos los botones del teclado personalizado y sus correspondientes pines GPIO y códigos de tecla. Esta matriz asigna GPIO específicos a funciones específicas del teclado.
-**custom_input_dev:** Un puntero global a un struct input_dev, que representa el dispositivo de entrada (nuestro teclado personalizado) al subsistema de entrada de Linux.
-**DEBOUNCE_DELAY_JIFFIES** Una macro que define un retardo de 50 milisegundos para la eliminación de rebotes . Esto es crucial para los botones físicos, ya que evita que se registren múltiples pulsaciones rápidas al presionar un botón una vez.
+- Registro de 13 teclas diferentes mediante pines GPIO.
+- Manejo de interrupciones (IRQ) con flanco de subida.
+- Antirebote por software con retardo configurable (por defecto, 50 ms).
+- Registro de un dispositivo de entrada en el subsistema `input` de Linux.
+- Mensajes de depuración visibles mediante `dmesg`.
+
+---
+
+## Asignación de teclas (GPIO ↔ KEYCODE)
+
+| GPIO | Código de tecla (`input.h`) | Nombre asignado |
+|------|-----------------------------|------------------|
+| 3    | `KEY_1`                     | "KEY_1"          |
+| 4    | `KEY_2`                     | "KEY_2"          |
+| 5    | `KEY_3`                     | "KEY_3"          |
+| 6    | `KEY_4`                     | "KEY_4"          |
+| 7    | `KEY_5`                     | "KEY_5"          |
+| 8    | `KEY_6`                     | "KEY_6"          |
+| 9    | `KEY_7`                     | "KEY_7"          |
+| 10   | `KEY_8`                     | "KEY_8"          |
+| 11   | `KEY_UP`                    | "KEY_UP"         |
+| 12   | `KEY_DOWN`                  | "KEY_DOWN"       |
+| 13   | `KEY_ENTER`                 | "KEY_ENTER"      |
+| 14   | `KEY_TAB`                   | "KEY_TAB"        |
+| 15   | `KEY_BACKSPACE`             | "KEY_S"          |
+
+---
+
+## Requisitos
+
+- Sistema Linux con soporte para módulos del kernel.
+- Acceso root para compilar e instalar el módulo.
+- Herramientas de compilación (`make`, `gcc`, `linux-headers`).
+- GPIOs accesibles (por ejemplo, en Raspberry Pi).
+
+---
+
+## Compilación
+
+Para compilar el módulo, se debe contar con el siguiente archivo `Makefile`:
+
+```makefile
+obj-m := gpio_keypad.o
+KDIR := /lib/modules/$(shell uname -r)/build
+PWD  := $(shell pwd)
+
+all:
+	$(MAKE) -C $(KDIR) M=$(PWD) modules
+
+clean:
+	$(MAKE) -C $(KDIR) M=$(PWD) clean

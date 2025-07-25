@@ -1,3 +1,21 @@
+## ⚙️ Servicios del sistema (systemd)
+
+A continuación se describen los pasos para configurar tres servicios `systemd` que automatizan la carga del módulo del teclado GPIO, la ejecución del monitor de entradas, y el inicio del juego arcade al arrancar la Raspberry Pi.
+
+---
+
+### 🔧 Servicio: `driver_init.service`
+
+Este servicio carga el módulo del kernel `driver_gpio_teclado.ko` al iniciar el sistema.
+
+#### 📥 Instalación
+
+1. Copiar el módulo compilado a una ubicación estándar del sistema:
+
+```bash
+sudo cp /ruta_al_proyecto/bolirana/Driver/obj/driver_gpio_teclado.ko /usr/local/bin/
+
+
 ###  driver_init.service
 importante copiar este script desde su ubicacion en la carpeta services
 ```bash
